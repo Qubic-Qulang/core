@@ -30,27 +30,24 @@ public:
             return !(*this == other);
         }
     };
-
+    uint64 currentIndex = 0;
 
 private:
     uint64 numberOfEchoCalls;
     uint64 numberOfBurnCalls;
     QPI::Array<GetStats_output, 8> statsArray;
-
-    GetStats_output addStats( uint64 a, uint64 b)
-    {
-        GetStats_output result;
-        result.numberOfEchoCalls = a;
-        result.numberOfBurnCalls = b;
-        return result;
-    }
+    
     
     /**
     Send back the invocation amount
     */
     PUBLIC_PROCEDURE(Echo)
-        GetStats_output stat = addStats(69, 420);
-        state.statsArray.set(0, stat);
+        GetStats_output stat;
+        stat.numberOfEchoCalls = 5;
+        stat.numberOfBurnCalls = 3;
+
+        state.statsArray.set(currentIndex, stat);
+        currentIndex++;
         state.numberOfEchoCalls = stat.numberOfEchoCalls;
 
         if (qpi.invocationReward() > 0)
