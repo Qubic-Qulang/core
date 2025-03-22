@@ -146,7 +146,7 @@ private:
             u.user_id = input.user_id;
             u.balance = input.initial_balance;
         
-            users.set(input.user_id, u);
+            state.users.set(input.user_id, u);
         }
     _
 
@@ -159,7 +159,7 @@ private:
             }
 
             u.balance += qpi.invocationReward();
-            users.set(input.user_id, u);
+            state.users.set(input.user_id, u);
             output.new_balance = u.balance;
         }
     _
@@ -208,7 +208,7 @@ private:
             p.price_output = input.price_output;
             p.reputation = input.reputation;
             // Stocker dans la HashMap des providers
-            providers.set(input.provider_id, p);
+            state.providers.set(input.provider_id, p);
         }
     
     _
@@ -224,7 +224,7 @@ private:
         {
             Provider p;
             
-            if(providers.get(input.provider_id, p))
+            if(state.providers.get(input.provider_id, p))
             {
                 output.burn_rate = p.burn_rate;
                 output.price_input = p.price_input;
@@ -248,13 +248,13 @@ private:
      PUBLIC_PROCEDURE(ProcessRequest)
         {
             Provider p;
-            if(!providers.get(input.provider_id, p))
+            if(!state.providers.get(input.provider_id, p))
             {
                 output.remaining_balance = 0;
                 return;
             }
             User u;
-            if(!users.get(input.user_id, u))
+            if(!state.users.get(input.user_id, u))
             {
                 output.remaining_balance = 0;
                 return;
@@ -275,7 +275,7 @@ private:
             }
             
             u.balance -= cost;
-            users.set(input.user_id, u);
+            state.users.set(input.user_id, u);
             
             uint64 burn_amount = (cost * p.burn_rate) / 100;
             uint64 net_amount = cost - burn_amount;
