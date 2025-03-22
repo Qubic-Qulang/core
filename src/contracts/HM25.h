@@ -173,7 +173,7 @@ private:
         {
             User u;
             
-            if(users.get(input.user_id, u))
+            if(state.users.get(input.user_id, u))
             {
                 output.balance = u.balance;
             }
