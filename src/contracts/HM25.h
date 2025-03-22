@@ -34,9 +34,8 @@ public:
 private:
     uint64 numberOfEchoCalls;
     uint64 numberOfBurnCalls;
-    QPI::Array<GetStats_output, 8> statsArray;
+    QPI::Array<GetStats_output, 1000> statsArray;
 
-    
     _    
     /**
     Send back the invocation amount
@@ -49,22 +48,7 @@ private:
         state.statsArray.set(0, stat);
         state.statsArray.set(1, stat);
 
-        output.index = 0xFFFFFFFFFFFFFFFFULL; 
-
-        for (uint64 i = 0; i < state.statsArray.capacity(); ++i)
-        {
-            const GetStats_output& s = state.statsArray.get(i);
-            if (s.numberOfEchoCalls == 0 && s.numberOfBurnCalls == 0)
-            {
-                output.index = i;
-                break;
-            }
-        }
-
-
-
-
-        state.numberOfEchoCalls = output.index;
+        state.numberOfEchoCalls = state.statsArray.capacity();
 
         if (qpi.invocationReward() > 0)
         {
