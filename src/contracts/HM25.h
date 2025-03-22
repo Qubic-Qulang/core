@@ -132,8 +132,7 @@ private:
      Register a new user
     */
     PUBLIC_PROCEDURE(RegisterUser)
-        {
-            
+        {   
             User u;
             u.user_id = input.user_id;
             u.balance = input.initial_balance;
@@ -149,7 +148,7 @@ private:
             {
                 qpi.__qpiAbort(1);
             }
-            // Ajoute le montant envoyé (invocationReward) au solde enregistré
+
             u.balance += qpi.invocationReward();
             users.set(input.user_id, u);
             output.new_balance = u.balance;
@@ -292,7 +291,7 @@ private:
         REGISTER_USER_FUNCTION(GetUser, 1);
         REGISTER_USER_PROCEDURE(RegisterProvider, 3);
         REGISTER_USER_FUNCTION(GetProvider, 2);
-        REGISTER_USER_PROCEDURE(ProcessRequest, 6);
+        REGISTER_USER_PROCEDURE(ProcessRequest, 4);
     _
 
     INITIALIZE
