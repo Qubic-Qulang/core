@@ -278,8 +278,7 @@ private:
             output.remaining_balance = u.balance;
         }
     _
-    
-    _
+
 
     REGISTER_USER_FUNCTIONS_AND_PROCEDURES
 
