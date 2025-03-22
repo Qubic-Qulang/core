@@ -118,9 +118,47 @@ private:
     };
 
     
-    QPI::HashMap<id, User, HASHMAP_SIZE> users;
-    QPI::HashMap<id, Provider, HASHMAP_SIZE> providers;
+    QPI::Array< User, HASHMAP_SIZE> users;
+    QPI::Array< Provider, HASHMAP_SIZE> providers;
 
+    uint64 findUserIndex(const id &uid) {
+        uint64 cap = state.users.capacity();
+        for (uint64 i = 0; i < cap; ++i) {
+            if (state.users.get(i).user_id == uid)
+                return i;
+        }
+        return NULL_INDEX; // Retourne NULL_INDEX si non trouvé
+    }
+
+    // Recherche l'indice d'un provider par son identifiant
+    uint64 findProviderIndex(const id &pid) {
+        uint64 cap = state.providers.capacity();
+        for (uint64 i = 0; i < cap; ++i) {
+            if (state.providers.get(i).provider_id == pid)
+                return i;
+        }
+        return NULL_INDEX;
+    }
+
+    // Recherche une case vide dans le tableau des utilisateurs (où user_id == NULL_ID)
+    uint64 findEmptyUserSlot() {
+        uint64 cap = state.users.capacity();
+        for (uint64 i = 0; i < cap; ++i) {
+            if (state.users.get(i).user_id == NULL_ID)
+                return i;
+        }
+        return NULL_INDEX;
+    }
+
+    // Recherche une case vide dans le tableau des providers
+    uint64 findEmptyProviderSlot() {
+        uint64 cap = state.providers.capacity();
+        for (uint64 i = 0; i < cap; ++i) {
+            if (state.providers.get(i).provider_id == NULL_ID)
+                return i;
+        }
+        return NULL_INDEX;
+    }
     
     // PUBLIC_PROCEDURE(Echo)
     //     GetStats_output stat;
@@ -140,26 +178,39 @@ private:
     /**
      Register a new user
     */
+
+public:
+ 
     PUBLIC_PROCEDURE(RegisterUser)
         {   
+            uint64 slot = findEmptyUserSlot();
+            if (slot == NULL_INDEX) {
+                qpi.__qpiAbort(1);
+            }
+
             User u;
             u.user_id = input.user_id;
             u.balance = input.initial_balance;
         
-            state.users.set(input.user_id, u);
+            state.users.set(slot, u);
         }
     _
 
     PUBLIC_PROCEDURE(DepositFunds)
         {
+            uint64 idx = findUserIndex(input.user_id);
+            if (idx == NULL_INDEX) {
+                qpi.__qpiAbort(1);
+            }
+
             User u;
-            if(!state.users.get(input.user_id, u))
+            if(!state.users.get(idx))
             {
                 qpi.__qpiAbort(1);
             }
 
             u.balance += qpi.invocationReward();
-            state.users.set(input.user_id, u);
+            state.users.set(idx, u);
             output.new_balance = u.balance;
         }
     _
@@ -171,15 +222,15 @@ private:
 
     PUBLIC_FUNCTION(GetUser)
         {
-            User u;
-            
-            if(state.users.get(input.user_id, u))
-            {
-                output.balance = u.balance;
+            uint64 idx = findUserIndex(input.user_id);
+            if (idx == NULL_INDEX) {
+                output.balance = 0;
+                return;
             }
             else
-            {
-                output.balance = 0;
+            {  
+                User u = state.users.get(idx);
+                output.balance = u.balance;
             }
         }
 
@@ -201,6 +252,10 @@ private:
 
     PUBLIC_PROCEDURE(RegisterProvider)
         {
+            uint64 slot = findEmptyProviderSlot();
+            if (slot == NULL_INDEX) {
+                qpi.__qpiAbort(1);
+            }
             Provider p;
             p.provider_id = input.provider_id;
             p.burn_rate = input.burn_rate;
@@ -208,7 +263,7 @@ private:
             p.price_output = input.price_output;
             p.reputation = input.reputation;
             // Stocker dans la HashMap des providers
-            state.providers.set(input.provider_id, p);
+            state.providers.set(slot, p);
         }
     
     _
@@ -222,22 +277,22 @@ private:
      */
     PUBLIC_FUNCTION(GetProvider)
         {
-            Provider p;
-            
-            if(state.providers.get(input.provider_id, p))
-            {
-                output.burn_rate = p.burn_rate;
-                output.price_input = p.price_input;
-                output.price_output = p.price_output;
-                output.reputation = p.reputation;
-            }
-            else
-            {
+            uint64 idx = findProviderIndex(input.provider_id);
+            if (idx == NULL_INDEX) {
                 output.burn_rate = 0;
                 output.price_input = 0;
                 output.price_output = 0;
                 output.reputation = 0;
             }
+            else
+            {
+                Provider p = state.providers.get(idx);
+                output.burn_rate = p.burn_rate;
+                output.price_input = p.price_input;
+                output.price_output = p.price_output;
+                output.reputation = p.reputation;
+            }
+            
         }
     _
 
@@ -247,35 +302,35 @@ private:
 
      PUBLIC_PROCEDURE(ProcessRequest)
         {
-            Provider p;
-            if(!state.providers.get(input.provider_id, p))
-            {
+            uint64 pidx = findProviderIndex(input.provider_id);
+            if (pidx == NULL_INDEX) {
                 output.remaining_balance = 0;
                 return;
             }
-            User u;
-            if(!state.users.get(input.user_id, u))
-            {
+            Provider p = state.providers.get(pidx);
+
+            uint64 uidx = findUserIndex(input.user_id);
+            if (uidx == NULL_INDEX) {
                 output.remaining_balance = 0;
                 return;
             }
-           
+
+            User u = state.users.get(uidx);
+
             uint64 cost = input.token_count * p.price_output;
-            
-            if(u.balance < cost)
-            {
+            if (u.balance < cost) {
                 output.remaining_balance = u.balance;
                 return;
             }
+
             
-            if(qpi.invocationReward() < cost)
-            {
+            if ((uint64)qpi.invocationReward() < cost) {
                 output.remaining_balance = u.balance;
                 return;
             }
             
             u.balance -= cost;
-            state.users.set(input.user_id, u);
+            state.users.set(uidx, u);
             
             uint64 burn_amount = (cost * p.burn_rate) / 100;
             uint64 net_amount = cost - burn_amount;
@@ -305,8 +360,24 @@ private:
 
     INITIALIZE
 
-        state.users.reset();
-        state.providers.reset();
+    {
+        for (uint64 i = 0; i < state.users.capacity(); ++i) {
+            User empty;
+            empty.user_id = NULL_ID;
+            empty.balance = 0;
+            state.users.set(i, empty);
+        }
+        
+        for (uint64 i = 0; i < state.providers.capacity(); ++i) {
+            Provider empty;
+            empty.provider_id = NULL_ID;
+            empty.burn_rate = 0;
+            empty.price_input = 0;
+            empty.price_output = 0;
+            empty.reputation = 0;
+            state.providers.set(i, empty);
+        }
+    }
         // state.numberOfEchoCalls = 0;
         // state.numberOfBurnCalls = 0;
     _
