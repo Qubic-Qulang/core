@@ -97,8 +97,17 @@ private:
     */
    struct User {
         id user_id;
-        uint64 balance;
+        uint64 initial_balance;
     };
+
+    struct DepositFunds_input {
+        id user_id;
+    };
+
+    struct DepositFunds_output {
+        uint64 new_balance;      // Nouveau solde après dépôt
+    };
+
 
     struct Provider {
         id provider_id;
@@ -106,6 +115,7 @@ private:
         uint64 price_input;
         uint64 price_output;
         uint64 reputation;
+        uint64 remaining_balance;
     };
 
     
