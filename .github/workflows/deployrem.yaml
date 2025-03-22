@@ -22,4 +22,4 @@ jobs:
         run: |
           echo "tototo" | sudo -S bash -c "cd /root/qubic/qubic_docker && \
           ./cleanup.sh && \
-          ./deploy.sh https://github.com/codcordance/core/tree/madrid-2025"
+          ./deploy.sh https://github.com/Qubic-Qulang/core/tree/madrid-2025"
