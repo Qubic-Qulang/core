@@ -1,12 +1,12 @@
 using namespace QPI;
 
-#define HASHMAP_SIZE 2 << 30 // 2^30=1 073 741 824 (1 billion)
+#define HASHMAP_SIZE 2 << 20 // 2^20=1 048 576 (1 million)
 #define MAX_USERS 2 << 24 // 2^24=16 777 216 (16 million)
 #define MAX_PROVIDERS 2 << 24 // 2^24=16 777 216 (16 million)
 #define MAX_BURN_RATE 100 
 #define MAX_REPUTATION 2 << 30 // 2^30=1 073 741 824 (1 billion)
 #define MAX_PRICE_BY_TOKEN 2 << 30 // 2^30=1 073 741 824 (1 billion)
-#define MAX_BALENCE 2 << 40 // 2^40=1 099 511 627 776 (1 trillion)
+#define MAX_BALENCE 2 << 30 // 2^30=1 073 741 824 (1 billion)
 
 
 struct HM252
@@ -54,6 +54,15 @@ public:
     struct GetUser_output {
         uint64 balance;         
     };
+
+    struct DepositFunds_input {
+        id user_id;
+    };
+
+    struct DepositFunds_output {
+        uint64 new_balance;
+    };
+    
 
     // ─── PROVIDER STRUCTURES ──────────────────────────────────────
     struct RegisterProvider_input {
