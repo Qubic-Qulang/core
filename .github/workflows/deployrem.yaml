@@ -1,0 +1,25 @@
+name: Deploy Qubic Madrid
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'madrid-2025'
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || 'madrid-2025' }}
+          
+      - name: Deploy Qubic
+        run: |
+          echo "tototo" | sudo -S bash -c "cd /root/qubic/qubic_docker && \
+          ./cleanup.sh && \
+          ./deploy.sh https://github.com/codcordance/core/tree/madrid-2025"
