@@ -35,11 +35,11 @@ private:
     uint64 numberOfEchoCalls;
     uint64 numberOfBurnCalls;
     QPI::Array<GetStats_output, 1000> statsArray;
-
-    _    
+   
     /**
     Send back the invocation amount
     */
+
     PUBLIC_PROCEDURE(Echo)
         GetStats_output stat;
         stat.numberOfEchoCalls = 69;
