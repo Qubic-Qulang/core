@@ -142,6 +142,21 @@ private:
         }
     _
 
+    PUBLIC_PROCEDURE(DepositFunds)
+        {
+            User u;
+            if(!users.get(input.user_id, u))
+            {
+                qpi.__qpiAbort(1);
+            }
+            // Ajoute le montant envoyé (invocationReward) au solde enregistré
+            u.balance += qpi.invocationReward();
+            users.set(input.user_id, u);
+            output.new_balance = u.balance;
+        }
+    _
+
+
     /**
     * Get the balance of a user 
     */
@@ -222,52 +237,47 @@ private:
      * Process a request and transfer the amount to the provider
      */
 
-     PUBLIC_FUNCTION(ProcessRequest)
-     {
-         Provider p;
-   
-         if (!providers.get(input.provider_id, p))
-         {
-             output.remaining_balance = 0;
-             return;
-         }
-         User u;
-    
-         if (!users.get(input.user_id, u))
-         {
-             output.remaining_balance = 0;
-             return;
-         }
-     
-         uint64 cost = input.token_count * p.price_output;
-         
-         if (u.balance < cost)
-         {
-             output.remaining_balance = u.balance;
-             return;
-         }
-         
- 
-         if (qpi.invocationReward() < cost)
-         {
-             output.remaining_balance = u.balance;
-             return;
-         }
-         
-
-         u.balance -= cost;
-         users.set(input.user_id, u);
-         
-         
-         uint64 burn_amount = (cost * p.burn_rate) / 100;
-         uint64 net_amount = cost - burn_amount;
-     
-         qpi.transfer(p.provider_id, net_amount);
-         qpi.burn(burn_amount);
-         
-         
-         output.remaining_balance = u.balance;
-     }
+     PUBLIC_PROCEDURE(ProcessRequest)
+        {
+            Provider p;
+            if(!providers.get(input.provider_id, p))
+            {
+                output.remaining_balance = 0;
+                return;
+            }
+            User u;
+            if(!users.get(input.user_id, u))
+            {
+                output.remaining_balance = 0;
+                return;
+            }
+           
+            uint64 cost = input.token_count * p.price_output;
+            
+            if(u.balance < cost)
+            {
+                output.remaining_balance = u.balance;
+                return;
+            }
+            
+            if(qpi.invocationReward() < cost)
+            {
+                output.remaining_balance = u.balance;
+                return;
+            }
+            
+            u.balance -= cost;
+            users.set(input.user_id, u);
+            
+            uint64 burn_amount = (cost * p.burn_rate) / 100;
+            uint64 net_amount = cost - burn_amount;
+            
+            qpi.transfer(p.provider_id, net_amount);
+            qpi.burn(burn_amount);
+            
+            output.remaining_balance = u.balance;
+        }
+    _
     
     _
 
@@ -279,10 +289,11 @@ private:
         // REGISTER_USER_FUNCTION(GetStats, 1);
 
         REGISTER_USER_PROCEDURE(RegisterUser, 1);
-        REGISTER_USER_PROCEDURE(RegisterProvider, 2);
+        REGISTER_USER_PROCEDURE(DepositFunds, 2);
         REGISTER_USER_FUNCTION(GetUser, 1);
+        REGISTER_USER_PROCEDURE(RegisterProvider, 3);
         REGISTER_USER_FUNCTION(GetProvider, 2);
-        REGISTER_USER_FUNCTION(ProcessRequest, 3);
+        REGISTER_USER_PROCEDURE(ProcessRequest, 6);
     _
 
     INITIALIZE
