@@ -23,12 +23,16 @@ public:
 private:
     uint64 numberOfEchoCalls;
     uint64 numberOfBurnCalls;
-
+    QPI::Array<GetStats_output, 8> statsArray;
     /**
     Send back the invocation amount
     */
     PUBLIC_PROCEDURE(Echo)
-        state.numberOfEchoCalls = 19;
+        GetStats_output s = {100, 200};
+        statsArray.push_back(s);
+        
+        state.numberOfEchoCalls = s.numberOfEchoCalls[0];
+
         if (qpi.invocationReward() > 0)
         {
             qpi.transfer(qpi.invocator(), qpi.invocationReward());
