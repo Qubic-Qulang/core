@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Branch to deploy'
+        description: "Branch to deploy"
         required: true
-        default: 'madrid-2025'
+        default: "madrid-2025"
 
 jobs:
   deploy:
@@ -17,9 +17,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.branch || 'madrid-2025' }}
-          
+
       - name: Deploy Qubic
         run: |
           echo "tototo" | sudo -S bash -c "cd /root/qubic/qubic_docker && \
           ./cleanup.sh && \
-          ./deploy.sh https://github.com/Qubic-Qulang/core/tree/madrid-2025"
+            ./deploy.sh https://github.com/Qubic-Qulang/core/tree/${{ github.event.inputs.branch || github.ref_name }}"
