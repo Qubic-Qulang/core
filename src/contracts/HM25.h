@@ -6,8 +6,8 @@ using namespace QPI;
 #define MAX_BURN_RATE 100 
 #define MAX_REPUTATION 2 << 30 // 2^30=1 073 741 824 (1 billion)
 #define MAX_PRICE_BY_TOKEN 2 << 30 // 2^30=1 073 741 824 (1 billion)
-#define MAX_BALENCE_2 2 << 40 // 2^40=1 099 511 627 776 (1 trillion)
-#define
+#define MAX_BALENCE 2 << 40 // 2^40=1 099 511 627 776 (1 trillion)
+
 
 struct HM252
 {
