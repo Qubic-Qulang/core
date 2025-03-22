@@ -305,8 +305,8 @@ private:
 
     INITIALIZE
 
-        users.reset();
-        providers.reset();
+        state.users.reset();
+        state.providers.reset();
         // state.numberOfEchoCalls = 0;
         // state.numberOfBurnCalls = 0;
     _
