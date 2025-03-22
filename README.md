@@ -1,6 +1,12 @@
 # qubic - node
 Qubic Node Source Code - this repository contains the source code of a full qubic node.
 
+
+# deploy manualy
+[![Deploy Qubic Madrid](https://img.shields.io/badge/Deploy-Qubic%20Madrid-blue)](https://github.com/codcordance/core/actions/workflows/deployrem.yaml/dispatch)
+
+
+
 > MAIN (current version running qubic) <br>
 > [![EFIBuild](https://github.com/qubic/core/actions/workflows/efi-build-develop.yml/badge.svg?branch=main)](https://github.com/qubic/core/actions/workflows/efi-build-develop.yml)
 > <br>
