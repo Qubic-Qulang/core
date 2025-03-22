@@ -1,5 +1,14 @@
 using namespace QPI;
 
+#define HASHMAP_SIZE 2 << 30 // 2^30=1 073 741 824 (1 billion)
+#define MAX_USERS 2 << 24 // 2^24=16 777 216 (16 million)
+#define MAX_PROVIDERS 2 << 24 // 2^24=16 777 216 (16 million)
+#define MAX_BURN_RATE 100 
+#define MAX_REPUTATION 2 << 30 // 2^30=1 073 741 824 (1 billion)
+#define MAX_PRICE_BY_TOKEN 2 << 30 // 2^30=1 073 741 824 (1 billion)
+#define MAX_BALENCE_2 2 << 40 // 2^40=1 099 511 627 776 (1 trillion)
+#define
+
 struct HM252
 {
 };
@@ -100,8 +109,8 @@ private:
     };
 
     
-    QPI::HashMap<id, User, 256> users;
-    QPI::HashMap<id, Provider, 256> providers;
+    QPI::HashMap<id, User, HASHMAP_SIZE> users;
+    QPI::HashMap<id, Provider, HASHMAP_SIZE> providers;
 
     
     // PUBLIC_PROCEDURE(Echo)
