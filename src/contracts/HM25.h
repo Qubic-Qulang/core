@@ -153,7 +153,7 @@ private:
     PUBLIC_PROCEDURE(DepositFunds)
         {
             User u;
-            if(!users.get(input.user_id, u))
+            if(!state.users.get(input.user_id, u))
             {
                 qpi.__qpiAbort(1);
             }
