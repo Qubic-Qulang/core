@@ -598,6 +598,7 @@ namespace QPI
 		return b ? (a % b) : 0;
 	}
 
+
 	//////////
 
 	struct Entity

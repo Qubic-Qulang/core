@@ -32,27 +32,27 @@ public:
     //         return !(*this == other);
     //     }
     // };
-    // ─── STRUCTURES POUR LES UTILISATEURS ────────────────────────────────
+    // ─── USERS STRUCTURES ─────────────────────────────────────────────────────
     struct RegisterUser_input {
-        id user_id;              // L'identité publique de l'utilisateur
-        uint64 initial_balance;  // Son solde initial (en tokens IA)
+        id user_id;             
+        uint64 initial_balance; 
     };
-    struct RegisterUser_output {}; // Pas de sortie nécessaire pour une procédure
+    struct RegisterUser_output {};
 
     struct GetUser_input {
         id user_id;
     };
     struct GetUser_output {
-        uint64 balance;          // Le solde actuel de l'utilisateur
+        uint64 balance;         
     };
 
-    // ─── STRUCTURES POUR LES PROVIDERS ──────────────────────────────────────
+    // ─── PROVIDER STRUCTURES ──────────────────────────────────────
     struct RegisterProvider_input {
-        id provider_id;          // L'identité publique du fournisseur
-        uint64 burn_rate;        // Taux de burn (pour certains mécanismes de tarification)
-        uint64 price_input;      // Prix d'entrée pour accéder au modèle IA
-        uint64 price_output;     // Prix de sortie ou résultat
-        uint64 reputation;       // Réputation du provider
+        id provider_id;        
+        uint64 burn_rate;        
+        uint64 price_input;      
+        uint64 price_output;     
+        uint64 reputation;  
     };
     struct RegisterProvider_output {};
 
@@ -67,12 +67,12 @@ public:
     };
 
     struct ProcessRequest_input {
-        id provider_id;   // Provider qui fournit le modèle LLM
-        id user_id;       // Utilisateur qui a fait la requête (prompt)
-        uint64 token_count; // Nombre de tokens utilisés dans la requête
+        id provider_id;
+        id user_id;
+        uint64 token_count;
     };
     struct ProcessRequest_output {
-        uint64 total_price; // Prix total calculé (token_count * price_output)
+        uint64 total_price;
     };
 
 private:
@@ -118,6 +118,10 @@ private:
     //     {
     //         qpi.transfer(qpi.invocator(), qpi.invocationReward());
     //     }
+
+    /**
+     Register a new user
+    */
     PUBLIC_PROCEDURE(RegisterUser)
         {
             
@@ -128,6 +132,10 @@ private:
             users.set(input.user_id, u);
         }
     _
+
+    /**
+    * Get the balance of a user 
+    */
 
     PUBLIC_FUNCTION(GetUser)
         {
@@ -154,6 +162,11 @@ private:
     //     }
     _
 
+
+    /**
+     * Register a new provider
+     */
+
     PUBLIC_PROCEDURE(RegisterProvider)
         {
             Provider p;
@@ -171,7 +184,10 @@ private:
     //     output.numberOfBurnCalls = state.numberOfBurnCalls;
     //     output.numberOfEchoCalls = state.numberOfEchoCalls;
     // _
-
+    
+    /**
+     * Get the provider information
+     */
     PUBLIC_FUNCTION(GetProvider)
         {
             Provider p;
@@ -193,46 +209,57 @@ private:
         }
     _
 
-    // ─── FONCTION : Traiter la requête et effectuer le paiement ───────────
-    PUBLIC_FUNCTION(ProcessRequest)
-        {
-            Provider p;
-            // Vérifier que le provider est enregistré
-            if (!providers.get(input.provider_id, p))
-            {
-                output.total_price = 0;
-                return;
-            }
-            
-            // Calculer le prix total en multipliant le nombre de tokens par le price_output
-            uint64 total_price = input.token_count * p.price_output;
-            
-            // Récupérer l'utilisateur qui a initié la requête
-            User u;
-            if (!users.get(input.user_id, u))
-            {
-                output.total_price = 0;
-                return;
-            }
-            
-            // Vérifier que l'utilisateur a suffisamment de fonds
-            if (u.balance < total_price)
-            {
-                // Optionnel : on pourrait lancer une erreur ici
-                output.total_price = 0;
-                return;
-            }
-            
-            // Déduire le montant du solde de l'utilisateur
-            u.balance -= total_price;
-            users.set(input.user_id, u);
-            
-            // Transférer le montant au provider
-            qpi.transfer(p.provider_id, total_price);
-            
-            // Renvoyer le montant débité pour affichage côté interface web
-            output.total_price = total_price;
-        }
+    /**
+     * Process a request and transfer the amount to the provider
+     */
+
+     PUBLIC_FUNCTION(ProcessRequest)
+     {
+         Provider p;
+   
+         if (!providers.get(input.provider_id, p))
+         {
+             output.remaining_balance = 0;
+             return;
+         }
+         User u;
+    
+         if (!users.get(input.user_id, u))
+         {
+             output.remaining_balance = 0;
+             return;
+         }
+     
+         uint64 cost = input.token_count * p.price_output;
+         
+         if (u.balance < cost)
+         {
+             output.remaining_balance = u.balance;
+             return;
+         }
+         
+ 
+         if (qpi.invocationReward() < cost)
+         {
+             output.remaining_balance = u.balance;
+             return;
+         }
+         
+
+         u.balance -= cost;
+         users.set(input.user_id, u);
+         
+         
+         uint64 burn_amount = (cost * p.burn_rate) / 100;
+         uint64 net_amount = cost - burn_amount;
+     
+         qpi.transfer(p.provider_id, net_amount);
+         qpi.burn(burn_amount);
+         
+         
+         output.remaining_balance = u.balance;
+     }
+    
     _
 
     REGISTER_USER_FUNCTIONS_AND_PROCEDURES
@@ -244,9 +271,9 @@ private:
 
         REGISTER_USER_PROCEDURE(RegisterUser, 1);
         REGISTER_USER_PROCEDURE(RegisterProvider, 2);
-        REGISTER_USER_FUNCTION(GetUser, 3);
-        REGISTER_USER_FUNCTION(GetProvider, 4);
-        REGISTER_USER_FUNCTION(ProcessRequest, 5);
+        REGISTER_USER_FUNCTION(GetUser, 1);
+        REGISTER_USER_FUNCTION(GetProvider, 2);
+        REGISTER_USER_FUNCTION(ProcessRequest, 3);
     _
 
     INITIALIZE
