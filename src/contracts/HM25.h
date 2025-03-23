@@ -239,6 +239,8 @@ private:
         state.users.set(fuOutput.index, u);
    }
 
+   _
+
    PUBLIC_PROCEDURE(DepositFunds)
    {
        findUserIndex_input fuInput;
