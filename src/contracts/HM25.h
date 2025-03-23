@@ -268,7 +268,7 @@ private:
 
             findEmptyProviderSlot_input fpInput2;
             findEmptyProviderSlot_output fpOutput2;
-            CALL(findEmptyProviderSlot, fpInput, fpOutput);
+            CALL(findEmptyProviderSlot, fpInput2, fpOutput2);
 
             Provider p;
             p.provider_id = qpi.invocator();
