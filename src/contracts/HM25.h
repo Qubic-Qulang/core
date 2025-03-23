@@ -38,7 +38,6 @@ public:
         uint64 price_input;      
         uint64 price_output;     
         uint64 reputation;
-        uint64 balance;  
     };
     struct UpdateProvider_output {};
 
@@ -50,7 +49,6 @@ public:
         uint64 price_input;
         uint64 price_output;
         uint64 reputation;
-        uint64 balance;
     };
 
     struct ProcessRequest_input {
@@ -81,7 +79,6 @@ private:
         uint64 price_input;
         uint64 price_output;
         uint64 reputation;
-        uint64 balance;
     };
 
     
@@ -276,7 +273,6 @@ private:
             p.price_input = input.price_input;
             p.price_output = input.price_output;
             p.reputation = input.reputation;
-            p.balance = input.balance;
             state.providers.set(fpOutput2.index, p);
         }else
         {
@@ -288,7 +284,6 @@ private:
             p.burn_rate = input.burn_rate;
             p.price_input = input.price_input;
             p.price_output = input.price_output;
-            p.balance = input.balance + p.balance;
             state.providers.set(fpOutput.index, p);
         }
     
@@ -357,7 +352,13 @@ private:
         u.balance -= cost;
         state.users.set(fuOutput.index, u);
         
-        p.balance = cost - burn_amount;
+        findUserIndex_input fuInput;
+        fuInput.user_id = p.provider_id;
+        findUserIndex_output fuOutput;
+        CALL(findUserIndex, fuInput, fuOutput);
+        
+        User u_provider = state.users.get(fuOutput.index);
+        u_provider.balance = cost - burn_amount + u_provider.balance;
         state.providers.set(fpOutput.index, p);
         }
        qpi.burn(burn_amount);
