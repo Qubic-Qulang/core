@@ -1,12 +1,17 @@
 using namespace QPI;
 
+/****************************************************************************************/
+/* @brief HM25 contract : This contract is using  to handle a peer to peer MarketPlace  */
+/* of AI Models. The market place is allowed user to use the AI models by paying with  */
+/* Tokens quibic.  The conctract handle all the transaction                            */
+/***************************************************************************************/
+
+// TODO:
+// 1. Allow only the owner to use the ProcessRequest function 
+// 2. Handle Errors et return the right error code
+
 #define ARRAY_SIZE 2 << 20    // 2^20=1 048 576 (1 million)
-#define MAX_USERS 2 << 24     // 2^24=16 777 216 (16 million)
-#define MAX_PROVIDERS 2 << 24 // 2^24=16 777 216 (16 million)
-#define MAX_BURN_RATE 100
-#define MAX_REPUTATION 2 << 30     // 2^30=1 073 741 824 (1 billion)
-#define MAX_PRICE_BY_TOKEN 2 << 30 // 2^30=1 073 741 824 (1 billion)
-#define MAX_BALENCE 2 << 30        // 2^30=1 073 741 824 (1 billion)
+
 
 struct HM252
 {
@@ -105,8 +110,8 @@ private:
     };
 
     /*
-     * Find the first empty slot in the users array
-     */
+    * @brief Find the first empty slot in the users array
+    */
     PRIVATE_FUNCTION(findEmptyUserSlot)
     {
         output.index = NULL_INDEX;
@@ -123,7 +128,7 @@ private:
     }
     _
 
-        struct findUserIndex_input
+    struct findUserIndex_input
     {
         id user_id;
     };
@@ -133,9 +138,8 @@ private:
     };
 
     /*
-     * Find the index of a user in the users array
-     */
-
+    * @brief Find the index of a user in the users array
+    */
     PRIVATE_FUNCTION(findUserIndex)
     {
         output.index = NULL_INDEX;
@@ -152,7 +156,8 @@ private:
     }
     _
 
-        struct findEmptyProviderSlot_input
+    
+    struct findEmptyProviderSlot_input
     {
     };
     struct findEmptyProviderSlot_output
@@ -160,10 +165,10 @@ private:
         uint64 index;
     };
 
-    /*
-     * Find the first empty slot in the providers array
-     */
 
+    /*
+     * @brief Find the first empty slot in the providers array
+    */
     PRIVATE_FUNCTION(findEmptyProviderSlot)
     {
         output.index = NULL_INDEX;
@@ -180,7 +185,10 @@ private:
     }
     _
 
-        struct findProviderIndex_input
+    /*
+    * @brief Find the index of a provider in the providers array
+    */
+    struct findProviderIndex_input
     {
         id provider_id;
     };
@@ -189,8 +197,9 @@ private:
         uint64 index;
     };
 
+
     /*
-     * Find the index of a provider in the providers array
+     * @brief Find the index of a provider in the providers array
      */
     PRIVATE_FUNCTION(findProviderIndex)
     {
@@ -211,7 +220,7 @@ private:
     // ─── PUBLIC FUNCTIONS AND PROCEDURES ────────────────────────────────────────
 
     /*
-     * Topup the balance of the invocator
+     * @brief Add funds to the invocator's balance of users
      */
     PUBLIC_PROCEDURE(Topup)
     {
@@ -241,9 +250,8 @@ private:
     _
 
     /*
-     * Withdraw funds from the invocator's balance
-     */
-
+    * @brief Withdraw funds from the invocator's balance of users
+    */
     PUBLIC_PROCEDURE(Withdraw)
     {
         findUserIndex_input fuInput;
@@ -267,7 +275,7 @@ private:
     _
 
     /*
-     * Get the balance of a user
+     * @brief Get User Balance
      */
     PUBLIC_FUNCTION(GetUser)
     {
@@ -289,7 +297,7 @@ private:
     _
 
     /*
-     * Register a provider
+     *@Brief Update Provider Details
      */
     PUBLIC_PROCEDURE(UpdateProvider)
     {
@@ -327,8 +335,9 @@ private:
     }
     _
 
+
     /*
-     * Get the details of a provider
+     * @brief Get Provider Details
      */
     PUBLIC_FUNCTION(GetProvider)
     {
@@ -355,7 +364,8 @@ private:
     _
 
     /*
-     * Process a request exchange between a user and a provider
+     * @brief Process Request : This the main function that process the request from the users
+     * handle the token transfer and burn
      */
     PUBLIC_PROCEDURE(ProcessRequest)
     {
@@ -420,6 +430,7 @@ private:
     INITIALIZE
 
     {
+        // Initialize the users and providers arrays : Set all the values to 0
         for (uint64 i = 0; i < state.users.capacity(); ++i)
         {
             User empty;
@@ -428,6 +439,7 @@ private:
             state.users.set(i, empty);
         }
 
+        // Initialize the providers array : Set all the values to 0
         for (uint64 i = 0; i < state.providers.capacity(); ++i)
         {
             Provider empty;
