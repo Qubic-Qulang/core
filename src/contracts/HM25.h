@@ -29,25 +29,18 @@ public:
     struct GetUser_output {
         uint64 balance;         
     };
-
-    struct DepositFunds_input {
-        id user_id;
-    };
-
-    struct DepositFunds_output {
-        uint64 new_balance;
-    };
     
 
     // ─── PROVIDER STRUCTURES ──────────────────────────────────────
-    struct RegisterProvider_input {
+    struct UpdateProvider_input {
         id provider_id;        
         uint64 burn_rate;        
         uint64 price_input;      
         uint64 price_output;     
-        uint64 reputation;  
+        uint64 reputation;
+        uint64 balance;  
     };
-    struct RegisterProvider_output {};
+    struct UpdateProvider_output {};
 
     struct GetProvider_input {
         id provider_id;
@@ -57,12 +50,14 @@ public:
         uint64 price_input;
         uint64 price_output;
         uint64 reputation;
+        uint64 balance;
     };
 
     struct ProcessRequest_input {
         id provider_id;
         id user_id;
-        uint64 token_count;
+        uint64 token_input;
+        uint64 token_output;
     };
     struct ProcessRequest_output {
         uint64 remaining_balance;
@@ -86,6 +81,7 @@ private:
         uint64 price_input;
         uint64 price_output;
         uint64 reputation;
+        uint64 balance;
     };
 
     
@@ -262,21 +258,40 @@ private:
    /*
     * Register a provider
    */
-   PUBLIC_PROCEDURE(RegisterProvider)
+   PUBLIC_PROCEDURE(UpdateProvider)
    {
-       findEmptyProviderSlot_input fpInput;
-       findEmptyProviderSlot_output fpOutput;
-       CALL(findEmptyProviderSlot, fpInput, fpOutput);
-       if(fpOutput.index == NULL_INDEX) {
-           qpi.__qpiAbort(3);
-       }
-       Provider p;
-       p.provider_id = input.provider_id;
-       p.burn_rate = input.burn_rate;
-       p.price_input = input.price_input;
-       p.price_output = input.price_output;
-       p.reputation = input.reputation;
-       state.providers.set(fpOutput.index, p);
+        findProviderIndex_input fpInput;
+        fpInput.provider_id = qpi.invocator();
+        findProviderIndex_output fpOutput;
+        CALL(findProviderIndex, fpInput, fpOutput);
+        if(fpOutput.index == NULL_INDEX) {
+
+            findEmptyProviderSlot_input fpInput2;
+            findEmptyProviderSlot_output fpOutput2;
+            CALL(findEmptyProviderSlot, fpInput, fpOutput);
+
+            Provider p;
+            p.provider_id = qpi.invocator();
+            p.burn_rate = input.burn_rate;
+            p.price_input = input.price_input;
+            p.price_output = input.price_output;
+            p.reputation = input.reputation;
+            p.balance = input.balance;
+            state.providers.set(fpOutput2.index, p);
+        }else
+        {
+            findProviderIndex_input fpInput;
+            fpInput.provider_id = qpi.invocator();
+            findProviderIndex_output fpOutput;
+            CALL(findProviderIndex, fpInput, fpOutput);
+            Provider p = state.providers.get(fpOutput.index);
+            p.burn_rate = input.burn_rate;
+            p.price_input = input.price_input;
+            p.price_output = input.price_output;
+            p.balance = input.balance + p.balance;
+            state.providers.set(fpOutput.index, p);
+        }
+    
    }
    _
 
@@ -310,7 +325,6 @@ private:
    */
    PUBLIC_PROCEDURE(ProcessRequest)
    {
-       // Recherche provider
        findProviderIndex_input fpInput;
        fpInput.provider_id = input.provider_id;
        findProviderIndex_output fpOutput;
@@ -330,22 +344,23 @@ private:
            return;
        }
        User u = state.users.get(fuOutput.index);
-       uint64 cost = input.token_count * p.price_output;
+
+       uint64 cost = (input.token_output * p.price_input) + (input.token_input * p.price_output);
+       uint64 burn_amount = (cost * p.burn_rate) / 10000;
+
        if(u.balance < cost) {
-           output.remaining_balance = u.balance;
+            // TODO: return error
            return;
        }
-       if ((uint64)qpi.invocationReward() < cost) {
-           output.remaining_balance = u.balance;
-           return;
-       }
-       u.balance -= cost;
-       state.users.set(fuOutput.index, u);
-       uint64 burn_amount = (cost * p.burn_rate) / 100;
-       uint64 net_amount = cost - burn_amount;
-       qpi.transfer(p.provider_id, net_amount);
+       else
+        {  
+        u.balance -= cost;
+        state.users.set(fuOutput.index, u);
+        
+        p.balance = cost - burn_amount;
+        state.providers.set(fpOutput.index, p);
+        }
        qpi.burn(burn_amount);
-       output.remaining_balance = u.balance;
    }
    _
 
@@ -354,7 +369,7 @@ private:
         REGISTER_USER_PROCEDURE(Topup, 1);
         REGISTER_USER_PROCEDURE(Withdraw, 2);
         REGISTER_USER_FUNCTION(GetUser, 1);
-        REGISTER_USER_PROCEDURE(RegisterProvider, 3);
+        REGISTER_USER_PROCEDURE(UpdateProvider, 3);
         REGISTER_USER_FUNCTION(GetProvider, 2);
         REGISTER_USER_PROCEDURE(ProcessRequest, 4);
     _
