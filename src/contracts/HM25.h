@@ -450,22 +450,27 @@ private:
         id uid = id(0, 0, 0, 0x12345678);
         uint64 balance = 56;
         User u = {uid, balance};
-        state.users.set(0, u);
+        //state.users.set(0, u);
 
-       findUserIndex_input fuInput;
-       fuInput.user_id = input.user_id;
-       findUserIndex_output fuOutput;
+       //findUserIndex_input fuInput;
+       //fuInput.user_id = input.user_id;
+       //findUserIndex_output fuOutput;
 
 
 
-       CALL(findUserIndex, fuInput, fuOutput);
-       if(fuOutput.index == NULL_INDEX) {
-           output.balance = 0;
-       } else {
-           User u = state.users.get(fuOutput.index);
-           output.balance = u.balance;
-       }
-   }
+       //CALL(findUserIndex, fuInput, fuOutput);
+       //if(fuOutput.index == NULL_INDEX) {
+       //    output.balance = 0;
+      // } else {
+       //    User u = state.users.get(fuOutput.index);
+        //   output.balance = u.balance;
+       //}
+        if (u.user_id == input.user_id) {
+            output.balance = u.balance;
+        } else {
+            output.balance = 0;
+        }
+    }   
    _
 
    // Enregistrer un provider
