@@ -122,9 +122,9 @@ private:
     QPI::Array< Provider, HASHMAP_SIZE> providers;
 
     static uint64 findUserIndex(const id &uid) {
-        uint64 cap = state.users.capacity();
+        uint64 cap = users.capacity();
         for (uint64 i = 0; i < cap; ++i) {
-            if (state.users.get(i).user_id == uid)
+            if (users.get(i).user_id == uid)
                 return i;
         }
         return NULL_INDEX; // Retourne NULL_INDEX si non trouvé
@@ -132,9 +132,9 @@ private:
 
     // Recherche l'indice d'un provider par son identifiant
     static uint64 findProviderIndex(const id &pid) {
-        uint64 cap = state.providers.capacity();
+        uint64 cap = providers.capacity();
         for (uint64 i = 0; i < cap; ++i) {
-            if (state.providers.get(i).provider_id == pid)
+            if (providers.get(i).provider_id == pid)
                 return i;
         }
         return NULL_INDEX;
@@ -142,9 +142,9 @@ private:
 
     // Recherche une case vide dans le tableau des utilisateurs (où user_id == NULL_ID)
     static uint64 findEmptyUserSlot() {
-        uint64 cap = state.users.capacity();
+        uint64 cap = users.capacity();
         for (uint64 i = 0; i < cap; ++i) {
-            if (state.users.get(i).user_id == NULL_ID)
+            if (users.get(i).user_id == NULL_ID)
                 return i;
         }
         return NULL_INDEX;
@@ -152,9 +152,9 @@ private:
 
     // Recherche une case vide dans le tableau des providers
     static uint64 findEmptyProviderSlot() {
-        uint64 cap = state.providers.capacity();
+        uint64 cap = providers.capacity();
         for (uint64 i = 0; i < cap; ++i) {
-            if (state.providers.get(i).provider_id == NULL_ID)
+            if (providers.get(i).provider_id == NULL_ID)
                 return i;
         }
         return NULL_INDEX;
