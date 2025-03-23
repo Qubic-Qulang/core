@@ -42,10 +42,10 @@ public:
     //     }
     // };
     // ─── USERS STRUCTURES ─────────────────────────────────────────────────────
-    struct RegisterUser_input {           
+    struct Topup_input {           
         uint64 initial_balance; 
     };
-    struct RegisterUser_output {};
+    struct Topup_output {};
 
     struct GetUser_input {
         id user_id;
@@ -200,7 +200,7 @@ private:
        }
        User u;
        u.user_id = qpi.invocator();
-       
+
        if (u.balance < 0) {
            u.balance = 0;
        }
