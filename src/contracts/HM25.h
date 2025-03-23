@@ -121,7 +121,7 @@ private:
     QPI::Array< User, HASHMAP_SIZE> users;
     QPI::Array< Provider, HASHMAP_SIZE> providers;
 
-    uint64 findUserIndex(const id &uid) {
+    static uint64 findUserIndex(const id &uid) {
         uint64 cap = state.users.capacity();
         for (uint64 i = 0; i < cap; ++i) {
             if (state.users.get(i).user_id == uid)
@@ -131,7 +131,7 @@ private:
     }
 
     // Recherche l'indice d'un provider par son identifiant
-    uint64 findProviderIndex(const id &pid) {
+    static uint64 findProviderIndex(const id &pid) {
         uint64 cap = state.providers.capacity();
         for (uint64 i = 0; i < cap; ++i) {
             if (state.providers.get(i).provider_id == pid)
@@ -141,7 +141,7 @@ private:
     }
 
     // Recherche une case vide dans le tableau des utilisateurs (où user_id == NULL_ID)
-    uint64 findEmptyUserSlot() {
+    static uint64 findEmptyUserSlot() {
         uint64 cap = state.users.capacity();
         for (uint64 i = 0; i < cap; ++i) {
             if (state.users.get(i).user_id == NULL_ID)
@@ -151,7 +151,7 @@ private:
     }
 
     // Recherche une case vide dans le tableau des providers
-    uint64 findEmptyProviderSlot() {
+    static uint64 findEmptyProviderSlot() {
         uint64 cap = state.providers.capacity();
         for (uint64 i = 0; i < cap; ++i) {
             if (state.providers.get(i).provider_id == NULL_ID)
@@ -179,7 +179,6 @@ private:
      Register a new user
     */
 
-public:
  
     PUBLIC_PROCEDURE(RegisterUser)
         {   
@@ -367,7 +366,7 @@ public:
             empty.balance = 0;
             state.users.set(i, empty);
         }
-        
+
         for (uint64 i = 0; i < state.providers.capacity(); ++i) {
             Provider empty;
             empty.provider_id = NULL_ID;
