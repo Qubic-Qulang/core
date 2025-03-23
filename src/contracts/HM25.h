@@ -319,6 +319,23 @@ private:
             p.price_output = input.price_output;
             p.reputation = input.reputation;
             state.providers.set(fpOutput2.index, p);
+
+            // check if the provider is already a user if not add it to the users array
+            findUserIndex_input fuInput;
+            fuInput.user_id = qpi.invocator();
+            findUserIndex_output fuOutput;
+
+            CALL(findUserIndex, fuInput, fuOutput);
+            if (fuOutput.index == NULL_INDEX)
+            {
+                findEmptyUserSlot_input fsInput2;
+                findEmptyUserSlot_output fsOutput2;
+                CALL(findEmptyUserSlot, fsInput2, fsOutput2);
+                User u;
+                u.user_id = qpi.invocator();
+                u.balance = 0;
+                state.users.set(fsOutput2.index, u);
+            }          
         }
         else
         {
