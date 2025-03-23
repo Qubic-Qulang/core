@@ -124,7 +124,7 @@ private:
     static uint64 findUserIndex(const id &uid) {
         uint64 cap = users.capacity();
         for (uint64 i = 0; i < cap; ++i) {
-            if (users.get(i).user_id == uid)
+            if (state.users.get(i).user_id == uid)
                 return i;
         }
         return NULL_INDEX; // Retourne NULL_INDEX si non trouvé
@@ -203,10 +203,7 @@ private:
             }
 
             User u;
-            if(state.users.get(idx) == u)
-            {
-                qpi.__qpiAbort(1);
-            }
+            u = state.users.get(idx);
 
             u.balance += qpi.invocationReward();
             state.users.set(idx, u);
