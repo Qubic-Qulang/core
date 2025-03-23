@@ -21,6 +21,8 @@ jobs:
 
       - name: Deploy Qubic
         run: |
-          echo "tototo" | sudo -S bash -c "cd /root/qubic/qubic_docker && \
-          ./cleanup.sh && \
+            sudo bash -c "echo 'Running cleanup...' && sleep 2 && \
+            cd /root/qubic/qubic_docker && \
+            ./cleanup.sh && sleep 2 &&  ./cleanup.sh && sleep && ./cleanup.sh    \
+            echo 'Running deploy...' && \
             ./deploy.sh https://github.com/Qubic-Qulang/core/tree/${{ github.event.inputs.branch || github.ref_name }}"
