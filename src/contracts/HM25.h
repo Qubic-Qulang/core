@@ -407,9 +407,9 @@ private:
     }
     _
 
-        REGISTER_USER_FUNCTIONS_AND_PROCEDURES
+    REGISTER_USER_FUNCTIONS_AND_PROCEDURES
 
-            REGISTER_USER_PROCEDURE(Topup, 1);
+    REGISTER_USER_PROCEDURE(Topup, 1);
     REGISTER_USER_PROCEDURE(Withdraw, 2);
     REGISTER_USER_FUNCTION(GetUser, 1);
     REGISTER_USER_PROCEDURE(UpdateProvider, 3);
@@ -417,7 +417,7 @@ private:
     REGISTER_USER_PROCEDURE(ProcessRequest, 4);
     _
 
-        INITIALIZE
+    INITIALIZE
 
     {
         for (uint64 i = 0; i < state.users.capacity(); ++i)
