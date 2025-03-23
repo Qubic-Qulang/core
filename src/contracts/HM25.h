@@ -462,7 +462,8 @@ private:
     //        output.balance = u.balance;
     //    }
 
-    id uid = "0x";
+    id uid = id();
+    //set a default value
     uint64 balance = 69;
     User u = {uid, balance};
     output.balance = u.balance;
