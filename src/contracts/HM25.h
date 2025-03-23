@@ -192,21 +192,27 @@ private:
 
    PUBLIC_PROCEDURE(Topup)
    {
-       findEmptyUserSlot_input fsInput;
-       findEmptyUserSlot_output fsOutput;
-       CALL(findEmptyUserSlot, fsInput, fsOutput);
-       if(fsOutput.index == NULL_INDEX) {
-           qpi.__qpiAbort(1); // Aucun slot libre
-       }
-       User u;
-       u.user_id = qpi.invocator();
 
-       if (u.balance < 0) {
-           u.balance = 0;
-       }
+        findUserIndex_input fuInput;
+        fuInput.user_id = qpi.invocator();
+        findUserIndex_output fuOutput;
 
-       u.balance = qpi.invocationReward() + u.balance;
-       state.users.set(fsOutput.index, u);
+
+        CALL(findUserIndex, fuInput, fuOutput);
+        if(fuOutput.index == NULL_INDEX) {
+            findEmptyUserSlot_input fsInput2;
+            findEmptyUserSlot_output fsOutput2;
+            CALL(findEmptyUserSlot, fsInput2, fsOutput2);
+            User u;
+            u.user_id = qpi.invocator()
+            u.balance = qpi.invocationReward();
+            state.users.set(fsOutput2.index, u);
+        } else {
+        User u = state.users.get(fuOutput.index);
+            u.balance = u.balance + qpi.invocationReward();
+            state.users.set(fuOutput.index, u);
+        }
+        
    }
    _
 
@@ -374,8 +380,6 @@ private:
             state.providers.set(i, empty);
         }
     }
-        // state.numberOfEchoCalls = 0;
-        // state.numberOfBurnCalls = 0;
     _
 };
 
