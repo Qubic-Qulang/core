@@ -1,6 +1,6 @@
 using namespace QPI;
 
-#define HASHMAP_SIZE 2 << 20 // 2^20=1 048 576 (1 million)
+#define ARRAY_SIZE 2 << 20 // 2^20=1 048 576 (1 million)
 #define MAX_USERS 2 << 24 // 2^24=16 777 216 (16 million)
 #define MAX_PROVIDERS 2 << 24 // 2^24=16 777 216 (16 million)
 #define MAX_BURN_RATE 100 
@@ -16,31 +16,7 @@ struct HM252
 struct HM25 : public ContractBase
 {
 public:
-    // struct Echo_input{};
-    // struct Echo_output{};
-
-    // struct Burn_input{};
-    // struct Burn_output{};
-
-    // struct GetStats_input {};
-
-
-    // struct GetStats_output
-    // {
-    //     uint64 numberOfEchoCalls;
-    //     uint64 numberOfBurnCalls;
-
-    //     bool operator==(const GetStats_output& other) const
-    //     {
-    //         return numberOfEchoCalls == other.numberOfEchoCalls &&
-    //                numberOfBurnCalls == other.numberOfBurnCalls;
-    //     }
-
-    //     bool operator!=(const GetStats_output& other) const
-    //     {
-    //         return !(*this == other);
-    //     }
-    // };
+    
     // ─── USERS STRUCTURES ─────────────────────────────────────────────────────
     struct Topup_input {           
     
@@ -98,16 +74,7 @@ public:
     struct Withdraw_output {};
 
 private:
-    // uint64 numberOfEchoCalls;
-    // uint64 numberOfBurnCalls;
-
-    // QPI::Array<GetStats_output, 256> statsArray;
-    // QPI::Array<User, 1024> users;
-    // QPI::Array<Provider, 1024> providers;
-   
-    /**
-    Send back the invocation amount
-    */
+    
    struct User {
         id user_id;
         uint64 balance;
@@ -122,12 +89,16 @@ private:
     };
 
     
-    QPI::Array< User, HASHMAP_SIZE> users;
-    QPI::Array< Provider, HASHMAP_SIZE> providers;
+    QPI::Array< User, ARRAY_SIZE> users;
+    QPI::Array< Provider, ARRAY_SIZE> providers;
 
-    struct findEmptyUserSlot_input { };  // Pas d'input nécessaire
+    struct findEmptyUserSlot_input { };
     struct findEmptyUserSlot_output { uint64 index; };
 
+
+    /*
+    * Find the first empty slot in the users array
+    */
     PRIVATE_FUNCTION(findEmptyUserSlot)
     {
         output.index = NULL_INDEX;
@@ -142,8 +113,13 @@ private:
     }
     _
 
+
     struct findUserIndex_input { id user_id; };
     struct findUserIndex_output { uint64 index; };
+
+    /*
+    * Find the index of a user in the users array
+    */
 
     PRIVATE_FUNCTION(findUserIndex)
     {
@@ -162,6 +138,10 @@ private:
     struct findEmptyProviderSlot_input { };
     struct findEmptyProviderSlot_output { uint64 index; };
 
+    /*
+    * Find the first empty slot in the providers array
+    */
+
     PRIVATE_FUNCTION(findEmptyProviderSlot)
     {
         output.index = NULL_INDEX;
@@ -177,9 +157,14 @@ private:
     _
 
 
+
     struct findProviderIndex_input { id provider_id; };
     struct findProviderIndex_output { uint64 index; };
 
+
+    /*
+    * Find the index of a provider in the providers array
+    */
     PRIVATE_FUNCTION(findProviderIndex)
     {
         output.index = NULL_INDEX;
@@ -195,6 +180,11 @@ private:
     _
     
 
+    // ─── PUBLIC FUNCTIONS AND PROCEDURES ────────────────────────────────────────
+
+    /*
+    * Topup the balance of the invocator
+    */
    PUBLIC_PROCEDURE(Topup)
    {
 
@@ -221,6 +211,10 @@ private:
    }
    _
 
+   /*
+   * Withdraw funds from the invocator's balance
+   */
+
    PUBLIC_PROCEDURE(Withdraw)
    {
         findUserIndex_input fuInput;
@@ -229,6 +223,7 @@ private:
         CALL(findUserIndex, fuInput, fuOutput);
         if(fuOutput.index == NULL_INDEX) {
             qpi.__qpiAbort(1);
+            //TODO: return error
         }
         User u = state.users.get(fuOutput.index);
         qpi.transfer(qpi.invocator(), input.amount);
@@ -238,38 +233,14 @@ private:
         u.balance -= input.amount;
         state.users.set(fuOutput.index, u);
    }
-
    _
 
-   PUBLIC_PROCEDURE(DepositFunds)
-   {
-       findUserIndex_input fuInput;
-       fuInput.user_id = input.user_id;
-       findUserIndex_output fuOutput;
-       CALL(findUserIndex, fuInput, fuOutput);
-       if(fuOutput.index == NULL_INDEX) {
-           qpi.__qpiAbort(2);
-       }
-       User u = state.users.get(fuOutput.index);
-       u.balance += qpi.invocationReward();
-       state.users.set(fuOutput.index, u);
-       output.new_balance = u.balance;
-   }
-   _
 
-   // Obtenir le solde d'un utilisateur
+   /*
+    * Get the balance of a user
+   */
    PUBLIC_FUNCTION(GetUser)
    {
-        // id uid = id(
-        //     0x1d64a56ccf88cb0d,
-        //     0xd3ed2db7170c2f51,
-        //     0x562598ae7c8f9a27,
-        //     0x5b04f91b2c5e83ef
-        // );
-        // uint64 balance = 56;
-        // User u = {uid, balance};
-        //state.users.set(0, u);
-
        findUserIndex_input fuInput;
        fuInput.user_id = input.user_id;
        findUserIndex_output fuOutput;
@@ -287,7 +258,10 @@ private:
     }   
    _
 
-   // Enregistrer un provider
+
+   /*
+    * Register a provider
+   */
    PUBLIC_PROCEDURE(RegisterProvider)
    {
        findEmptyProviderSlot_input fpInput;
@@ -306,9 +280,11 @@ private:
    }
    _
 
-   // Obtenir les infos d'un provider
+   /*
+    * Get the details of a provider
+   */
   PUBLIC_FUNCTION(GetProvider)
-   {
+  {
        findProviderIndex_input fpInput;
        fpInput.provider_id = input.provider_id;
        findProviderIndex_output fpOutput;
@@ -324,11 +300,14 @@ private:
            output.price_input = p.price_input;
            output.price_output = p.price_output;
            output.reputation = p.reputation;
-       }
+     }
    }
    _
 
-   // Traiter une requête : déduction du coût, burn et transfert au provider
+
+   /* 
+    * Process a request exchange between a user and a provider
+   */
    PUBLIC_PROCEDURE(ProcessRequest)
    {
        // Recherche provider
@@ -341,7 +320,7 @@ private:
            return;
        }
        Provider p = state.providers.get(fpOutput.index);
-       // Recherche utilisateur
+
        findUserIndex_input fuInput;
        fuInput.user_id = input.user_id;
        findUserIndex_output fuOutput;
@@ -372,18 +351,12 @@ private:
 
     REGISTER_USER_FUNCTIONS_AND_PROCEDURES
 
-        // REGISTER_USER_PROCEDURE(Echo, 1);
-        // REGISTER_USER_PROCEDURE(Burn, 2);
-
-        // REGISTER_USER_FUNCTION(GetStats, 1);
-
         REGISTER_USER_PROCEDURE(Topup, 1);
         REGISTER_USER_PROCEDURE(Withdraw, 2);
-        REGISTER_USER_PROCEDURE(DepositFunds, 3);
         REGISTER_USER_FUNCTION(GetUser, 1);
-        REGISTER_USER_PROCEDURE(RegisterProvider, 4);
+        REGISTER_USER_PROCEDURE(RegisterProvider, 3);
         REGISTER_USER_FUNCTION(GetProvider, 2);
-        REGISTER_USER_PROCEDURE(ProcessRequest, 5);
+        REGISTER_USER_PROCEDURE(ProcessRequest, 4);
     _
 
     INITIALIZE
