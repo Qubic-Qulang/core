@@ -204,7 +204,7 @@ private:
             findEmptyUserSlot_output fsOutput2;
             CALL(findEmptyUserSlot, fsInput2, fsOutput2);
             User u;
-            u.user_id = qpi.invocator()
+            u.user_id = qpi.invocator();
             u.balance = qpi.invocationReward();
             state.users.set(fsOutput2.index, u);
         } else {
