@@ -5,18 +5,42 @@ Qubic Node Source Code - this repository contains the source code of a full qubi
 
 ## HM25 Contract Updates
 
-The `HM25` contract, located in [src/contracts/HM25.h](src/contracts/HM25.h), has undergone significant changes. This contract is responsible for managing a peer-to-peer marketplace for AI models, where users pay with Qubic tokens. The update focuses primarily on:
+The HM25 contract (located in [src/contracts/HM25.h](src/contracts/HM25.h)) has been updated to manage a decentralized AI model marketplace where users pay with Qubic tokens. Key changes include:
 
-- **Error Handling & Permissions:**  
-  - Enhanced error control in the `ProcessRequest` procedure, especially for insufficient user balance.
-  - Added `TODO` comments to restrict the `ProcessRequest` function to the contract owner and refine error code responses.
+- **Data Structures:**  
+  Fixed-size arrays (2^20 slots) for users and providers store user IDs, balances, and provider details (prices, burn rate, reputation).
+
+- **Auxiliary Functions:**  
+  New private functions to locate empty slots and index existing entries for both users and providers.
+
+- **Procedures and Functions:**  
+  - **Topup:** Adds invocation rewards to a user's balance, creating a new user entry if needed.
+  - **Withdraw:** Allows users to withdraw funds after balance verification.
+  - **GetUser:** Retrieves a user's balance.
+  - **UpdateProvider:** Registers or updates provider parameters.
+  - **GetProvider:** Returns provider details.
+  - **ProcessRequest:** Handles transactions by calculating total costs, deducting user balance, crediting the provider after applying the burn rate, and burning the specified token amount.
+
+
+- **Struct HM25:**  
+  - **Public Nested Structures:**  
+    Each public procedure and function (e.g., `Topup`, `Withdraw`, `GetUser`, `UpdateProvider`, `GetProvider`, `ProcessRequest`) has associated input and output structs defining its parameters. For example, `ProcessRequest_input` includes provider and user IDs and token values, while `ProcessRequest_output` returns the remaining balance after processing.
   
-- **State Management Improvements:**  
-  - Updated initialization routines for user and provider arrays to ensure proper state setup.
+  - **Internal Data Structures:**  
+    Two primary internal structs—`User` and `Provider`—store essential data:
+    - **User:** Holds a `user_id` and a `balance`.
+    - **Provider:** Holds a `provider_id`, `price_input`, `price_output`, `burn_rate`, and `reputation`.
+  
+  - **Arrays:**  
+    Fixed-size arrays (2^20 slots) store `User` and `Provider` entries.
+  
+  - **Private Helper Functions:**  
+    Functions like `findEmptyUserSlot`, `findUserIndex`, `findEmptyProviderSlot`, and `findProviderIndex` help locate entries or empty slots within the arrays.
 
-For more details, please review the [HM25 contract source code](src/contracts/HM25.h).
+- **Struct HM252:**  
+  An empty struct that might serve as a placeholder or be intended for future use.
 
-
+These structures and procedures collectively manage user balances, provider details, and transaction processing by calculating costs, updating balances, and burning tokens as needed.
 
 # deploy manualy
 [![Deploy Qubic Madrid](https://img.shields.io/badge/Deploy-Qubic%20Madrid-blue)](https://github.com/codcordance/core/actions/workflows/deployrem.yaml/dispatch)
