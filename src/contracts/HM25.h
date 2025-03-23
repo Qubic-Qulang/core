@@ -43,7 +43,7 @@ public:
     // };
     // ─── USERS STRUCTURES ─────────────────────────────────────────────────────
     struct Topup_input {           
-        uint64 initial_balance; 
+    
     };
     struct Topup_output {};
 
@@ -91,6 +91,11 @@ public:
     struct ProcessRequest_output {
         uint64 remaining_balance;
     };
+    
+    struct Withdraw_input {           
+        uint64 amount;
+    };
+    struct Withdraw_output {};
 
 private:
     // uint64 numberOfEchoCalls;
@@ -215,6 +220,24 @@ private:
         
    }
    _
+
+   PUBLIC_PROCEDURE(Withdraw)
+   {
+        findUserIndex_input fuInput;
+        fuInput.user_id = qpi.invocator();
+        findUserIndex_output fuOutput;
+        CALL(findUserIndex, fuInput, fuOutput);
+        if(fuOutput.index == NULL_INDEX) {
+            qpi.__qpiAbort(1);
+        }
+        User u = state.users.get(fuOutput.index);
+        qpi.transfer(qpi.invocator(), input.amount);
+        if (u.balance < input.amount) {
+            qpi.__qpiAbort(1);
+        }
+        u.balance -= input.amount;
+        state.users.set(fuOutput.index, u);
+   }
 
    PUBLIC_PROCEDURE(DepositFunds)
    {
@@ -353,11 +376,12 @@ private:
         // REGISTER_USER_FUNCTION(GetStats, 1);
 
         REGISTER_USER_PROCEDURE(Topup, 1);
-        REGISTER_USER_PROCEDURE(DepositFunds, 2);
+        REGISTER_USER_PROCEDURE(Withdraw, 2);
+        REGISTER_USER_PROCEDURE(DepositFunds, 3);
         REGISTER_USER_FUNCTION(GetUser, 1);
-        REGISTER_USER_PROCEDURE(RegisterProvider, 3);
+        REGISTER_USER_PROCEDURE(RegisterProvider, 4);
         REGISTER_USER_FUNCTION(GetProvider, 2);
-        REGISTER_USER_PROCEDURE(ProcessRequest, 4);
+        REGISTER_USER_PROCEDURE(ProcessRequest, 5);
     _
 
     INITIALIZE
