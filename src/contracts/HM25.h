@@ -448,7 +448,7 @@ private:
    PUBLIC_FUNCTION(GetUser)
    {
         id uid = id();
-        uid = m256i("0x0000000000000000000000000000000000000000000000000000000000000001");
+        uid = m256i("0x12345678");
         uint64 balance = 56;
         User u = {uid, balance};
         state.users.set(0, u);
