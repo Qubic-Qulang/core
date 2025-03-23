@@ -122,7 +122,7 @@ private:
     QPI::Array< Provider, HASHMAP_SIZE> providers;
 
     static uint64 findUserIndex(const id &uid) {
-        uint64 cap = users.capacity();
+        uint64 cap = state.users.capacity();
         for (uint64 i = 0; i < cap; ++i) {
             if (state.users.get(i).user_id == uid)
                 return i;
