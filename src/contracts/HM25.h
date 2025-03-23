@@ -203,7 +203,7 @@ private:
             }
 
             User u;
-            if(!state.users.get(idx))
+            if(state.users.get(idx) == u)
             {
                 qpi.__qpiAbort(1);
             }
