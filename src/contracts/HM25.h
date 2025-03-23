@@ -121,13 +121,13 @@ private:
     QPI::Array< User, HASHMAP_SIZE> users;
     QPI::Array< Provider, HASHMAP_SIZE> providers;
 
-    static uint64 findUserIndex(const id &uid) {
+    static uint64 findUserIndex(const CONTRACT_STATE_TYPE &state, const id &uid) {
         uint64 cap = state.users.capacity();
         for (uint64 i = 0; i < cap; ++i) {
             if (state.users.get(i).user_id == uid)
                 return i;
         }
-        return NULL_INDEX; // Retourne NULL_INDEX si non trouvé
+        return NULL_INDEX;
     }
 
     // Recherche l'indice d'un provider par son identifiant
@@ -197,7 +197,7 @@ private:
 
     PUBLIC_PROCEDURE(DepositFunds)
         {
-            uint64 idx = findUserIndex(input.user_id);
+            uint64 idx = findUserIndex(state, input.user_id);
             if (idx == NULL_INDEX) {
                 qpi.__qpiAbort(1);
             }
