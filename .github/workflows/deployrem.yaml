@@ -12,6 +12,7 @@ on:
 jobs:
   deploy:
     runs-on: self-hosted
+    timeout-minutes: 4
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,6 +21,14 @@ jobs:
 
       - name: Deploy Qubic
         run: |
-          echo "tototo" | sudo -S bash -c "cd /root/qubic/qubic_docker && \
+          sudo bash -c "
+          echo 'Running cleanup...' && sleep 2 && \
+          cd /root/qubic/qubic_docker && \
+          ./cleanup.sh && sleep 2 && \
+          cd /root/qubic/qubic_docker && \
+          ./cleanup.sh && sleep 2 && \
+          cd /root/qubic/qubic_docker && \
           ./cleanup.sh && \
-            ./deploy.sh https://github.com/Qubic-Qulang/core/tree/${{ github.event.inputs.branch || github.ref_name }}"
+          echo 'Running deploy...' && \
+          cd /root/qubic/qubic_docker && \
+          ./deploy.sh https://github.com/Qubic-Qulang/core/tree/${{ github.event.inputs.branch || github.ref_name }}"

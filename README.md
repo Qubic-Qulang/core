@@ -30,7 +30,7 @@ If you name it `Qubic`, qubic will find the disk easier and know which device to
 # sample command in linux
 mkfs.fat -F 32 -n QUBIC /dev/sda
 ```
-If you have a disk and want to use partitions, this is possible too. use `gdisk`.
+If you have a disk and want to usee partitions, this is possible too. use `gdisk`.
 ```bash
 gdisk /dev/sda
 
