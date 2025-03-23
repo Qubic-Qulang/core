@@ -1,5 +1,21 @@
+![Banner](./qulang-banner-rounded.png)
 # qubic - node
 Qubic Node Source Code - this repository contains the source code of a full qubic node.
+
+
+## HM25 Contract Updates
+
+The `HM25` contract, located in [src/contracts/HM25.h](src/contracts/HM25.h), has undergone significant changes. This contract is responsible for managing a peer-to-peer marketplace for AI models, where users pay with Qubic tokens. The update focuses primarily on:
+
+- **Error Handling & Permissions:**  
+  - Enhanced error control in the `ProcessRequest` procedure, especially for insufficient user balance.
+  - Added `TODO` comments to restrict the `ProcessRequest` function to the contract owner and refine error code responses.
+  
+- **State Management Improvements:**  
+  - Updated initialization routines for user and provider arrays to ensure proper state setup.
+
+For more details, please review the [HM25 contract source code](src/contracts/HM25.h).
+
 
 
 # deploy manualy
