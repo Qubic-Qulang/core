@@ -36,9 +36,9 @@ public:
     struct UpdateProvider_input
     {
         id provider_id;
-        uint64 burn_rate;
         uint64 price_input;
         uint64 price_output;
+        uint64 burn_rate;
         uint64 reputation;
     };
     struct UpdateProvider_output
@@ -51,9 +51,9 @@ public:
     };
     struct GetProvider_output
     {
-        uint64 burn_rate;
         uint64 price_input;
         uint64 price_output;
+        uint64 burn_rate;
         uint64 reputation;
     };
 
@@ -87,9 +87,9 @@ private:
     struct Provider
     {
         id provider_id;
-        uint64 burn_rate;
         uint64 price_input;
         uint64 price_output;
+        uint64 burn_rate;
         uint64 reputation;
     };
 
