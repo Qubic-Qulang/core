@@ -190,7 +190,7 @@ private:
     _
     
 
-   PUBLIC_PROCEDURE(topup)
+   PUBLIC_PROCEDURE(Topup)
    {
        findEmptyUserSlot_input fsInput;
        findEmptyUserSlot_output fsOutput;
@@ -346,7 +346,7 @@ private:
 
         // REGISTER_USER_FUNCTION(GetStats, 1);
 
-        REGISTER_USER_PROCEDURE(topup, 1);
+        REGISTER_USER_PROCEDURE(Topup, 1);
         REGISTER_USER_PROCEDURE(DepositFunds, 2);
         REGISTER_USER_FUNCTION(GetUser, 1);
         REGISTER_USER_PROCEDURE(RegisterProvider, 3);
