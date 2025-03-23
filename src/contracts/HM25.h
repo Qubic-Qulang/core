@@ -447,16 +447,25 @@ private:
    // Obtenir le solde d'un utilisateur
    PUBLIC_FUNCTION(GetUser)
    {
-       findUserIndex_input fuInput;
-       fuInput.user_id = input.user_id;
-       findUserIndex_output fuOutput;
-       CALL(findUserIndex, fuInput, fuOutput);
-       if(fuOutput.index == NULL_INDEX) {
-           output.balance = 0;
-       } else {
-           User u = state.users.get(fuOutput.index);
-           output.balance = u.balance;
-       }
+    //    findUserIndex_input fuInput;
+    //    fuInput.user_id = input.user_id;
+    //    findUserIndex_output fuOutput;
+
+    //    if(fuOutput.index == NULL_INDEX) {
+    //        output.balance = 0;
+    //    } else {
+    //        //User u = state.users.get(fuOutput.index);
+    //        // put defautl value on the array
+    //        id uid = "0x"
+    //        uint64 balance = 0;
+    //        User u = {uid, balance};
+    //        output.balance = u.balance;
+    //    }
+
+    id uid = "0x";
+    uint64 balance = 69;
+    User u = {uid, balance};
+    output.balance = u.balance;
    }
    _
 
