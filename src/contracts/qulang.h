@@ -1,4 +1,4 @@
-/******************************************************************************************/
+i/******************************************************************************************/
 /* @brief Qulang Contract                                                                 */
 /*                                                                                        */
 /*        Qulang is a blockchain token management contract that enables secure            */
@@ -24,7 +24,8 @@ struct Qulang : public ContractBase
 private:
     QPI::Map<id, id>    owner;
     QPI::Map<id, bool>  whitelist;
-    QPI::Map<id, uint64> balances;
+    QPI::Map<id, uint64> Users_balances;
+    uint64 contract_balance;
 
 public:
     struct Deposit_input
@@ -52,6 +53,29 @@ public:
     struct Burn_output
     {
         uint64 new_balance;
+    };
+
+    struct Debit_input
+    {
+        id user;
+        uint64 amount;
+    };
+
+    struct Debit_output
+    {
+        uint64 new_user_balance;
+        uint64 new_contract_balance;
+    };
+    
+    struct WithdrawTo_input
+    {
+        id to;
+        uint64 amount;
+    };
+
+    struct WithdrawTo_output
+    {
+        uint64 new_contract_balance;
     };
 
     struct Initialize_input
@@ -162,15 +186,14 @@ public:
      */
     PUBLIC_PROCEDURE(Deposit)
     {
-        ensureWhitelisted();
-
         uint64 current_balance = 0;
         if(state.balances.exists(qpi.invocator()))
         {
-            current_balance = state.balances.get(qpi.invocator());
+            current_balance = state.Users_balances.get(qpi.invocator());
         }
         current_balance += input.amount;
-        state.balances.set(qpi.invocator(), current_balance);
+        state.Users_balances.set(qpi.invocator(), current_balance);
+        state.contract_balance += input.amount;
         output.new_balance = current_balance;
     }
     _
@@ -179,11 +202,11 @@ public:
      * @brief Withdraw funds from the contract.
      */
     PUBLIC_PROCEDURE(Withdraw)
-    {
+    { 
         uint64 current_balance = 0;
-        if(state.balances.exists(qpi.invocator()))
+        if(state.Users_balances.exists(qpi.invocator()))
         {
-            current_balance = state.balances.get(qpi.invocator());
+            current_balance = state.Users_balances.get(qpi.invocator());
         }
         if (current_balance < input.amount)
         {
@@ -191,7 +214,7 @@ public:
             return;
         }
         current_balance -= input.amount;
-        state.balances.set(qpi.invocator(), current_balance);
+        state.Users_balances.set(qpi.invocator(), current_balance);
         qpi.transfer(qpi.invocator(), input.amount);
         output.new_balance = current_balance;
     }
@@ -205,9 +228,9 @@ public:
         ensureWhitelisted();
 
         uint64 current_balance = 0;
-        if(state.balances.exists(qpi.invocator()))
+        if(state.Users_balances.exists(qpi.invocator()))
         {
-            current_balance = state.balances.get(qpi.invocator());
+            current_balance = state.Users_balances.get(qpi.invocator());
         }
         if (current_balance < input.amount)
         {
@@ -215,9 +238,57 @@ public:
             return;
         }
         current_balance -= input.amount;
-        state.balances.set(qpi.invocator(), current_balance);
+        state.Users_balances.set(qpi.invocator(), current_balance);
         qpi.burn(input.amount);
         output.new_balance = current_balance;
+    }
+    _
+
+    /*
+     * @brief Debit funds from a specified user's balance and add the amount to the contract balance.
+     */
+    PUBLIC_PROCEDURE(Debit)
+    {
+    
+        ensureWhitelisted();
+
+        uint64 current_balance = 0;
+        if(state.Users_balances.exists(input.user))
+        {
+            current_balance = state.Users_balances.get(input.user);
+        }
+        if (current_balance < input.amount)
+        {
+            qpi.__qpiAbort(1);
+            return;
+        }
+        current_balance -= input.amount;
+        state.Users_balances.set(input.user, current_balance);
+        
+        
+        state.contract_balance += input.amount;
+        
+        output.new_user_balance = current_balance;
+        output.new_contract_balance = state.contract_balance;
+    }
+    _
+
+    /*
+     * @brief Withdraw funds from the contract to a specified address.
+     */
+    PUBLIC_PROCEDURE(WithdrawTo)
+    {
+        ensureWhitelisted();
+
+        if(state.contract_balance < input.amount)
+        {
+            qpi.__qpiAbort(3);
+            return;
+        }
+        state.contract_balance -= input.amount;
+        
+        qpi.transfer(input.to, input.amount);
+        output.new_contract_balance = state.contract_balance;
     }
     _
 
@@ -226,10 +297,9 @@ public:
      */
     PUBLIC_FUNCTION(GetBalance)
     {
-        ensureWhitelisted();
 
-        if (state.balances.exists(qpi.invocator())) {
-            output.balance = state.balances.get(qpi.invocator());
+        if (state.Users_balances.exists(qpi.invocator())) {
+            output.balance = state.Users_balances.get(qpi.invocator());
         } else {
             output.balance = 0;
         }
@@ -257,6 +327,8 @@ public:
         REGISTER_USER_PROCEDURE(Deposit, 4);
         REGISTER_USER_PROCEDURE(Withdraw, 5);
         REGISTER_USER_PROCEDURE(Burn, 6);
+        REGISTER_USER_PROCEDURE(Debit, 7);
+        REGISTER_USER_PROCEDURE(WithdrawTo, 8);
 
         // functions
         REGISTER_USER_FUNCTION(GetBalance, 1);
