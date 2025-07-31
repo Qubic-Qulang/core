@@ -180,8 +180,6 @@ public:
      */
     PUBLIC_PROCEDURE(Withdraw)
     {
-        ensureWhitelisted();
-        
         uint64 current_balance = 0;
         if(state.balances.exists(qpi.invocator()))
         {
