@@ -1,4 +1,4 @@
-i/******************************************************************************************/
+/******************************************************************************************/
 /* @brief Qulang Contract                                                                 */
 /*                                                                                        */
 /*        Qulang is a blockchain token management contract that enables secure            */
@@ -125,6 +125,15 @@ public:
     {
         uint64 count;
         QPI::Vector<id> addresses;
+    };
+
+    struct GetContractBalance_input
+    {
+        // No input needed for getting contract balance
+    };
+    struct GetContractBalance_output
+    {
+        uint64 balance;
     };
 
     PRIVATE_FUNCTION(ensureWhitelisted)
@@ -318,6 +327,13 @@ public:
     }
     _
 
+    PUBLIC_FUNCTION(GetContractBalance)
+    {
+        ensureWhitelisted();
+        output.balance = state.contract_balance;
+    }
+    _
+
     REGISTER_USER_FUNCTIONS_AND_PROCEDURES()
     {
         // procedures
@@ -333,6 +349,7 @@ public:
         // functions
         REGISTER_USER_FUNCTION(GetBalance, 1);
         REGISTER_USER_FUNCTION(GetWhitelistedAddresses, 2);
+        REGISTER_USER_FUNCTION(GetContractBalance, 3);
     
     }
     _
