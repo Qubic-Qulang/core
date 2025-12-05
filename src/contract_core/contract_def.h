@@ -220,6 +220,7 @@ constexpr unsigned short TESTEXB_CONTRACT_INDEX = (CONTRACT_INDEX + 1);
 // The following are included after the contracts to keep their definitions and dependencies
 // inaccessible for contracts
 #include "qpi_collection_impl.h"
+#include "qpi_hash_map_impl.h"
 #include "qpi_trivial_impl.h"
 
 #include "platform/global_var.h"
