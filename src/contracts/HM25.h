@@ -1,17 +1,7 @@
 using namespace QPI;
 
-/****************************************************************************************/
-/* @brief HM25 contract : This contract is using  to handle a peer to peer MarketPlace  */
-/* of AI Models. The market place is allowed user to use the AI models by paying with  */
-/* Tokens quibic.  The conctract handle all the transaction                            */
-/***************************************************************************************/
-
-// TODO:
-// 1. Allow only the owner to use the ProcessRequest function 
-// 2. Handle Errors et return the right error code
-
-#define ARRAY_SIZE 2 << 20    // 2^20=1 048 576 (1 million)
-
+constexpr uint64 HM25_MAX_USERS = 131072;
+constexpr uint64 HM25_MAX_WHITELIST = 1024;
 
 struct HM252
 {
@@ -19,12 +9,6 @@ struct HM252
 
 struct HM25 : public ContractBase
 {
-private:
-    QPI::Map<id, id>    owner;
-    QPI::Map<id, bool>  whitelist;
-    QPI::Map<id, uint64> Users_balances;
-    uint64 contract_balance;
-
 public:
     struct Deposit_input
     {
@@ -58,7 +42,6 @@ public:
         id user;
         uint64 amount;
     };
-
     struct Debit_output
     {
         uint64 new_user_balance;
@@ -70,7 +53,6 @@ public:
         id to;
         uint64 amount;
     };
-
     struct WithdrawTo_output
     {
         uint64 new_contract_balance;
@@ -78,275 +60,286 @@ public:
 
     struct Initialize_input
     {
-        // No input needed for initialization
     };
     struct Initialize_output
     {
-        // No output needed for initialization
     };
 
     struct AddToWhitelist_input
     {
         id address;
     };
-
     struct AddToWhitelist_output
     {
-        // No output needed for adding to whitelist
     };
 
     struct RemoveFromWhitelist_input
     {
         id address;
     };
-
     struct RemoveFromWhitelist_output
     {
-        // No output needed for removing from whitelist
     };
 
     struct GetBalance_input
     {
-        // No input needed for getting balance
     };
     struct GetBalance_output
     {
         uint64 balance;
     };
 
-    struct GetWhitelistedAddresses_input
+    struct GetWhitelistedCount_input
     {
-        // No input needed for getting whitelisted addresses
     };
-
-    struct GetWhitelistedAddresses_output
+    struct GetWhitelistedCount_output
     {
         uint64 count;
-        QPI::Vector<id> addresses;
     };
 
     struct GetContractBalance_input
     {
-        // No input needed for getting contract balance
     };
     struct GetContractBalance_output
     {
         uint64 balance;
     };
 
-    PRIVATE_FUNCTION(ensureWhitelisted)
+    struct IsWhitelisted_input
     {
-        if (!state.whitelist.exists(qpi.invocator()) || !state.whitelist.get(qpi.invocator())) {
-            qpi.__qpiAbort(4);
-        }
-    }
-    _
-    /*
-    * @brief Initialize the contract state - used one Time
-    */
-
-    PUBLIC_PROCEDURE(Initialize)
+        id address;
+    };
+    struct IsWhitelisted_output
     {
-        // if owner is not set, set it to the invocator
-        if (!state.owner.exists(id("owner"))) {
-            state.owner.set(id("owner"), qpi.invocator());
-            state.whitelist.set(qpi.invocator(), true);
-        }
-        else {
-            qpi.__qpiAbort(1);
-        }
-    }
-    _
+        bit is_whitelisted;
+    };
 
-
-    /*
-     * @brief Add an address to the whitelist.
-     */
-    PUBLIC_PROCEDURE(AddToWhitelist)
-    {
-
-        if (qpi.invocator() != state.owner.get(id("owner"))) {
-            qpi.__qpiAbort(2);
-            return;
-        }
-
-        state.whitelist.set(input.address, true);
-    }
-    _
-
-    /*
-     * @brief Remove an address from the whitelist.
-     */
-    PUBLIC_PROCEDURE(RemoveFromWhitelist)
-    {
-        if (qpi.invocator() != state.owner.get(id("owner"))) {
-            qpi.__qpiAbort(3);
-            return;
-        }
-        state.whitelist.erase(input.address);
-    }
-    _
-
-
-    /*
-     * @brief Deposit funds into the contract.
-     */
-    PUBLIC_PROCEDURE(Deposit)
-    {
-        if (input.amount == 0) {
-            qpi.__qpiAbort(1);
-            return;
-        }
-        
-        uint64 current_balance = 0;
-        if(state.Users_balances.exists(qpi.invocator()))
-        {
-            current_balance = state.Users_balances.get(qpi.invocator());
-        }
-        current_balance += input.amount;
-        state.Users_balances.set(qpi.invocator(), current_balance);
-        state.contract_balance += input.amount;
-        output.new_balance = current_balance;
-    }
-    _
-
-    /*
-     * @brief Withdraw funds from the contract.
-     */
-    PUBLIC_PROCEDURE(Withdraw)
-    { 
-        uint64 current_balance = 0;
-        if(state.Users_balances.exists(qpi.invocator()))
-        {
-            current_balance = state.Users_balances.get(qpi.invocator());
-        }
-        if (current_balance < input.amount)
-        {
-            qpi.__qpiAbort(1);
-            return;
-        }
-        current_balance -= input.amount;
-        state.Users_balances.set(qpi.invocator(), current_balance);
-        qpi.transfer(qpi.invocator(), input.amount);
-        output.new_balance = current_balance;
-    }
-    _
-
-    /*
-     * @brief Burn funds from the contract.
-     */
-    PUBLIC_PROCEDURE(Burn)
-    {
-    ensureWhitelisted();
-
-    if (input.amount == 0) {
-        qpi.__qpiAbort(1);
-        return;
-    }
-
-    uint64 current_balance = 0;
-    if(state.Users_balances.exists(qpi.invocator()))
-    {
-        current_balance = state.Users_balances.get(qpi.invocator());
-    }
-
-    if (current_balance < input.amount)
-    {
-        qpi.__qpiAbort(3);
-        return;
-    }
-
-    current_balance -= input.amount;
-    state.Users_balances.set(qpi.invocator(), current_balance);
-    qpi.burn(input.amount);
-    output.new_balance = current_balance;
-    }
-    _
-
-    /*
-     * @brief Debit funds from a specified user's balance and add the amount to the contract balance.
-     */
-    PUBLIC_PROCEDURE(Debit)
-    {
+private:
+    id _owner;
+    bit _initialized;
+    uint64 _contractBalance;
     
-        ensureWhitelisted();
+    HashMap<id, uint64, HM25_MAX_USERS> _userBalances;
+    HashMap<id, bit, HM25_MAX_WHITELIST> _whitelist;
+    uint64 _whitelistCount;
 
-        uint64 current_balance = 0;
-        if(state.Users_balances.exists(input.user))
+    PRIVATE_FUNCTION_WITH_LOCALS(isWhitelisted)
+        bit result;
+    _
+        locals.result = false;
+        if (state._whitelist.get(qpi.invocator(), locals.result))
         {
-            current_balance = state.Users_balances.get(input.user);
+            output.result = locals.result;
         }
-        if (current_balance < input.amount)
+        else
         {
-            qpi.__qpiAbort(1);
-            return;
+            output.result = false;
         }
-        current_balance -= input.amount;
-        state.Users_balances.set(input.user, current_balance);
-        
-        
-        state.contract_balance += input.amount;
-        
-        output.new_user_balance = current_balance;
-        output.new_contract_balance = state.contract_balance;
-    }
     _
 
-    /*
-     * @brief Withdraw funds from the contract to a specified address.
-     */
-    PUBLIC_PROCEDURE(WithdrawTo)
+    struct isWhitelisted_output
     {
-        ensureWhitelisted();
+        bit result;
+    };
 
-        if(state.contract_balance < input.amount)
+public:
+    PUBLIC_PROCEDURE(Initialize)
+        if (state._initialized)
         {
-            qpi.__qpiAbort(3);
             return;
         }
-        state.contract_balance -= input.amount;
+        state._owner = qpi.invocator();
+        state._whitelist.set(qpi.invocator(), true);
+        state._whitelistCount = 1;
+        state._contractBalance = 0;
+        state._initialized = true;
+    _
+
+    PUBLIC_PROCEDURE(AddToWhitelist)
+        if (qpi.invocator() != state._owner)
+        {
+            return;
+        }
+        bit existing = false;
+        if (!state._whitelist.get(input.address, existing) || !existing)
+        {
+            state._whitelist.set(input.address, true);
+            state._whitelistCount = state._whitelistCount + 1;
+        }
+    _
+
+    PUBLIC_PROCEDURE(RemoveFromWhitelist)
+        if (qpi.invocator() != state._owner)
+        {
+            return;
+        }
+        bit existing = false;
+        if (state._whitelist.get(input.address, existing) && existing)
+        {
+            state._whitelist.removeByKey(input.address);
+            state._whitelistCount = state._whitelistCount - 1;
+        }
+    _
+
+    PUBLIC_PROCEDURE(Deposit)
+        if (input.amount == 0)
+        {
+            return;
+        }
         
+        uint64 currentBalance = 0;
+        state._userBalances.get(qpi.invocator(), currentBalance);
+        currentBalance = currentBalance + input.amount;
+        state._userBalances.set(qpi.invocator(), currentBalance);
+        state._contractBalance = state._contractBalance + input.amount;
+        output.new_balance = currentBalance;
+    _
+
+    PUBLIC_PROCEDURE(Withdraw)
+        if (input.amount == 0)
+        {
+            return;
+        }
+        
+        uint64 currentBalance = 0;
+        state._userBalances.get(qpi.invocator(), currentBalance);
+        
+        if (currentBalance < input.amount)
+        {
+            return;
+        }
+        
+        currentBalance = currentBalance - input.amount;
+        state._userBalances.set(qpi.invocator(), currentBalance);
+        state._contractBalance = state._contractBalance - input.amount;
+        qpi.transfer(qpi.invocator(), input.amount);
+        output.new_balance = currentBalance;
+    _
+
+    PUBLIC_PROCEDURE_WITH_LOCALS(Burn)
+        bit isAdmin;
+    _
+        if (input.amount == 0)
+        {
+            return;
+        }
+        
+        locals.isAdmin = false;
+        state._whitelist.get(qpi.invocator(), locals.isAdmin);
+        if (!locals.isAdmin)
+        {
+            return;
+        }
+
+        uint64 currentBalance = 0;
+        state._userBalances.get(qpi.invocator(), currentBalance);
+
+        if (currentBalance < input.amount)
+        {
+            return;
+        }
+
+        currentBalance = currentBalance - input.amount;
+        state._userBalances.set(qpi.invocator(), currentBalance);
+        qpi.burn(input.amount);
+        output.new_balance = currentBalance;
+    _
+
+    PUBLIC_PROCEDURE_WITH_LOCALS(Debit)
+        bit isAdmin;
+    _
+        if (input.amount == 0)
+        {
+            return;
+        }
+        
+        locals.isAdmin = false;
+        state._whitelist.get(qpi.invocator(), locals.isAdmin);
+        if (!locals.isAdmin)
+        {
+            return;
+        }
+
+        uint64 currentBalance = 0;
+        state._userBalances.get(input.user, currentBalance);
+        
+        if (currentBalance < input.amount)
+        {
+            return;
+        }
+        
+        currentBalance = currentBalance - input.amount;
+        state._userBalances.set(input.user, currentBalance);
+        state._contractBalance = state._contractBalance + input.amount;
+        
+        output.new_user_balance = currentBalance;
+        output.new_contract_balance = state._contractBalance;
+    _
+
+    PUBLIC_PROCEDURE_WITH_LOCALS(WithdrawTo)
+        bit isAdmin;
+    _
+        if (input.amount == 0)
+        {
+            return;
+        }
+        
+        locals.isAdmin = false;
+        state._whitelist.get(qpi.invocator(), locals.isAdmin);
+        if (!locals.isAdmin)
+        {
+            return;
+        }
+
+        if (state._contractBalance < input.amount)
+        {
+            return;
+        }
+        
+        state._contractBalance = state._contractBalance - input.amount;
         qpi.transfer(input.to, input.amount);
-        output.new_contract_balance = state.contract_balance;
-    }
+        output.new_contract_balance = state._contractBalance;
     _
 
-    /*
-     * @brief Get the balance of the invocator.
-     */
     PUBLIC_FUNCTION(GetBalance)
-    {
+        uint64 balance = 0;
+        state._userBalances.get(qpi.invocator(), balance);
+        output.balance = balance;
+    _
 
-        if (state.Users_balances.exists(qpi.invocator())) {
-            output.balance = state.Users_balances.get(qpi.invocator());
-        } else {
-            output.balance = 0;
+    PUBLIC_FUNCTION_WITH_LOCALS(GetWhitelistedCount)
+        bit isAdmin;
+    _
+        locals.isAdmin = false;
+        state._whitelist.get(qpi.invocator(), locals.isAdmin);
+        if (!locals.isAdmin)
+        {
+            output.count = 0;
+            return;
         }
-    }
+        output.count = state._whitelistCount;
     _
 
-    /*
-     * @brief Get list of whitelisted addresses.
-     */
-    PUBLIC_FUNCTION(GetWhitelistedAddresses)
-    {
-        ensureWhitelisted();
-
-        output.addresses = state.whitelist.keys();
-        output.count = output.addresses.size();
-    }
+    PUBLIC_FUNCTION_WITH_LOCALS(GetContractBalance)
+        bit isAdmin;
+    _
+        locals.isAdmin = false;
+        state._whitelist.get(qpi.invocator(), locals.isAdmin);
+        if (!locals.isAdmin)
+        {
+            output.balance = 0;
+            return;
+        }
+        output.balance = state._contractBalance;
     _
 
-    PUBLIC_FUNCTION(GetContractBalance)
-    {
-        ensureWhitelisted();
-        output.balance = state.contract_balance;
-    }
+    PUBLIC_FUNCTION(IsWhitelisted)
+        bit isWhitelisted = false;
+        state._whitelist.get(input.address, isWhitelisted);
+        output.is_whitelisted = isWhitelisted;
     _
 
-    REGISTER_USER_FUNCTIONS_AND_PROCEDURES()
-    {
-        // procedures
+    REGISTER_USER_FUNCTIONS_AND_PROCEDURES
         REGISTER_USER_PROCEDURE(Initialize, 1);
         REGISTER_USER_PROCEDURE(AddToWhitelist, 2);
         REGISTER_USER_PROCEDURE(RemoveFromWhitelist, 3);
@@ -356,11 +349,9 @@ public:
         REGISTER_USER_PROCEDURE(Debit, 7);
         REGISTER_USER_PROCEDURE(WithdrawTo, 8);
 
-        // functions
         REGISTER_USER_FUNCTION(GetBalance, 1);
-        REGISTER_USER_FUNCTION(GetWhitelistedAddresses, 2);
+        REGISTER_USER_FUNCTION(GetWhitelistedCount, 2);
         REGISTER_USER_FUNCTION(GetContractBalance, 3);
-    
-    }
+        REGISTER_USER_FUNCTION(IsWhitelisted, 4);
     _
 };
