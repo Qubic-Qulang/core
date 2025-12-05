@@ -19,59 +19,20 @@ struct HM252
 
 struct HM25 : public ContractBase
 {
+private:
+    QPI::Map<id, id>    owner;
+    QPI::Map<id, bool>  whitelist;
+    QPI::Map<id, uint64> Users_balances;
+    uint64 contract_balance;
+
 public:
-    // ─── USERS STRUCTURES ─────────────────────────────────────────────────────
-    struct Topup_input
+    struct Deposit_input
     {
+        uint64 amount;
     };
-    struct Topup_output
+    struct Deposit_output
     {
-    };
-
-    struct GetUser_input
-    {
-        id user_id;
-    };
-    struct GetUser_output
-    {
-        uint64 balance;
-    };
-
-    // ─── PROVIDER STRUCTURES ──────────────────────────────────────
-    struct UpdateProvider_input
-    {
-        id provider_id;
-        uint64 price_input;
-        uint64 price_output;
-        uint64 burn_rate;
-        uint64 reputation;
-    };
-    struct UpdateProvider_output
-    {
-    };
-
-    struct GetProvider_input
-    {
-        id provider_id;
-    };
-    struct GetProvider_output
-    {
-        uint64 price_input;
-        uint64 price_output;
-        uint64 burn_rate;
-        uint64 reputation;
-    };
-
-    struct ProcessRequest_input
-    {
-        id provider_id;
-        id user_id;
-        uint64 token_input;
-        uint64 token_output;
-    };
-    struct ProcessRequest_output
-    {
-        uint64 remaining_balance;
+        uint64 new_balance;
     };
 
     struct Withdraw_input
@@ -80,393 +41,326 @@ public:
     };
     struct Withdraw_output
     {
+        uint64 new_balance;
     };
 
-private:
-    struct User
+    struct Burn_input
     {
-        id user_id;
+        uint64 amount;
+    };
+    struct Burn_output
+    {
+        uint64 new_balance;
+    };
+
+    struct Debit_input
+    {
+        id user;
+        uint64 amount;
+    };
+
+    struct Debit_output
+    {
+        uint64 new_user_balance;
+        uint64 new_contract_balance;
+    };
+    
+    struct WithdrawTo_input
+    {
+        id to;
+        uint64 amount;
+    };
+
+    struct WithdrawTo_output
+    {
+        uint64 new_contract_balance;
+    };
+
+    struct Initialize_input
+    {
+        // No input needed for initialization
+    };
+    struct Initialize_output
+    {
+        // No output needed for initialization
+    };
+
+    struct AddToWhitelist_input
+    {
+        id address;
+    };
+
+    struct AddToWhitelist_output
+    {
+        // No output needed for adding to whitelist
+    };
+
+    struct RemoveFromWhitelist_input
+    {
+        id address;
+    };
+
+    struct RemoveFromWhitelist_output
+    {
+        // No output needed for removing from whitelist
+    };
+
+    struct GetBalance_input
+    {
+        // No input needed for getting balance
+    };
+    struct GetBalance_output
+    {
         uint64 balance;
     };
 
-    struct Provider
+    struct GetWhitelistedAddresses_input
     {
-        id provider_id;
-        uint64 price_input;
-        uint64 price_output;
-        uint64 burn_rate;
-        uint64 reputation;
+        // No input needed for getting whitelisted addresses
     };
 
-    QPI::Array<User, ARRAY_SIZE> users;
-    QPI::Array<Provider, ARRAY_SIZE> providers;
-
-    struct findEmptyUserSlot_input
+    struct GetWhitelistedAddresses_output
     {
-    };
-    struct findEmptyUserSlot_output
-    {
-        uint64 index;
+        uint64 count;
+        QPI::Vector<id> addresses;
     };
 
+    struct GetContractBalance_input
+    {
+        // No input needed for getting contract balance
+    };
+    struct GetContractBalance_output
+    {
+        uint64 balance;
+    };
+
+    PRIVATE_FUNCTION(ensureWhitelisted)
+    {
+        if (!state.whitelist.exists(qpi.invocator()) || !state.whitelist.get(qpi.invocator())) {
+            qpi.__qpiAbort(4);
+        }
+    }
+    _
     /*
-    * @brief Find the first empty slot in the users array
+    * @brief Initialize the contract state - used one Time
     */
-    PRIVATE_FUNCTION(findEmptyUserSlot)
+
+    PUBLIC_PROCEDURE(Initialize)
     {
-        output.index = NULL_INDEX;
-        uint64 cap = state.users.capacity();
-        for (uint64 i = 0; i < cap; ++i)
-        {
-            User u = state.users.get(i);
-            if (u.user_id == NULL_ID)
-            {
-                output.index = i;
-                break;
-            }
+        // if owner is not set, set it to the invocator
+        if (!state.owner.exists(id("owner"))) {
+            state.owner.set(id("owner"), qpi.invocator());
+            state.whitelist.set(qpi.invocator(), true);
+        }
+        else {
+            qpi.__qpiAbort(1);
         }
     }
     _
 
-    struct findUserIndex_input
-    {
-        id user_id;
-    };
-    struct findUserIndex_output
-    {
-        uint64 index;
-    };
 
     /*
-    * @brief Find the index of a user in the users array
-    */
-    PRIVATE_FUNCTION(findUserIndex)
-    {
-        output.index = NULL_INDEX;
-        uint64 cap = state.users.capacity();
-        for (uint64 i = 0; i < cap; ++i)
-        {
-            User u = state.users.get(i);
-            if (u.user_id == input.user_id)
-            {
-                output.index = i;
-                break;
-            }
-        }
-    }
-    _
-
-    
-    struct findEmptyProviderSlot_input
-    {
-    };
-    struct findEmptyProviderSlot_output
-    {
-        uint64 index;
-    };
-
-
-    /*
-     * @brief Find the first empty slot in the providers array
-    */
-    PRIVATE_FUNCTION(findEmptyProviderSlot)
-    {
-        output.index = NULL_INDEX;
-        uint64 cap = state.providers.capacity();
-        for (uint64 i = 0; i < cap; ++i)
-        {
-            Provider p = state.providers.get(i);
-            if (p.provider_id == NULL_ID)
-            {
-                output.index = i;
-                break;
-            }
-        }
-    }
-    _
-
-    /*
-    * @brief Find the index of a provider in the providers array
-    */
-    struct findProviderIndex_input
-    {
-        id provider_id;
-    };
-    struct findProviderIndex_output
-    {
-        uint64 index;
-    };
-
-
-    /*
-     * @brief Find the index of a provider in the providers array
+     * @brief Add an address to the whitelist.
      */
-    PRIVATE_FUNCTION(findProviderIndex)
+    PUBLIC_PROCEDURE(AddToWhitelist)
     {
-        output.index = NULL_INDEX;
-        uint64 cap = state.providers.capacity();
-        for (uint64 i = 0; i < cap; ++i)
-        {
-            Provider p = state.providers.get(i);
-            if (p.provider_id == input.provider_id)
-            {
-                output.index = i;
-                break;
-            }
+
+        if (qpi.invocator() != state.owner.get(id("owner"))) {
+            qpi.__qpiAbort(2);
+            return;
         }
+
+        state.whitelist.set(input.address, true);
     }
     _
 
-    // ─── PUBLIC FUNCTIONS AND PROCEDURES ────────────────────────────────────────
-
     /*
-     * @brief Add funds to the invocator's balance of users
+     * @brief Remove an address from the whitelist.
      */
-    PUBLIC_PROCEDURE(Topup)
+    PUBLIC_PROCEDURE(RemoveFromWhitelist)
     {
-
-        findUserIndex_input fuInput;
-        fuInput.user_id = qpi.invocator();
-        findUserIndex_output fuOutput;
-
-        CALL(findUserIndex, fuInput, fuOutput);
-        if (fuOutput.index == NULL_INDEX)
-        {
-            findEmptyUserSlot_input fsInput2;
-            findEmptyUserSlot_output fsOutput2;
-            CALL(findEmptyUserSlot, fsInput2, fsOutput2);
-            User u;
-            u.user_id = qpi.invocator();
-            u.balance = qpi.invocationReward();
-            state.users.set(fsOutput2.index, u);
+        if (qpi.invocator() != state.owner.get(id("owner"))) {
+            qpi.__qpiAbort(3);
+            return;
         }
-        else
-        {
-            User u = state.users.get(fuOutput.index);
-            u.balance = u.balance + qpi.invocationReward();
-            state.users.set(fuOutput.index, u);
+        state.whitelist.erase(input.address);
+    }
+    _
+
+
+    /*
+     * @brief Deposit funds into the contract.
+     */
+    PUBLIC_PROCEDURE(Deposit)
+    {
+        if (input.amount == 0) {
+            qpi.__qpiAbort(1);
+            return;
         }
+        
+        uint64 current_balance = 0;
+        if(state.Users_balances.exists(qpi.invocator()))
+        {
+            current_balance = state.Users_balances.get(qpi.invocator());
+        }
+        current_balance += input.amount;
+        state.Users_balances.set(qpi.invocator(), current_balance);
+        state.contract_balance += input.amount;
+        output.new_balance = current_balance;
     }
     _
 
     /*
-    * @brief Withdraw funds from the invocator's balance of users
-    */
+     * @brief Withdraw funds from the contract.
+     */
     PUBLIC_PROCEDURE(Withdraw)
-    {
-        findUserIndex_input fuInput;
-        fuInput.user_id = qpi.invocator();
-        findUserIndex_output fuOutput;
-        CALL(findUserIndex, fuInput, fuOutput);
-        if (fuOutput.index == NULL_INDEX)
+    { 
+        uint64 current_balance = 0;
+        if(state.Users_balances.exists(qpi.invocator()))
+        {
+            current_balance = state.Users_balances.get(qpi.invocator());
+        }
+        if (current_balance < input.amount)
         {
             qpi.__qpiAbort(1);
-            // TODO: return error
+            return;
         }
-        User u = state.users.get(fuOutput.index);
+        current_balance -= input.amount;
+        state.Users_balances.set(qpi.invocator(), current_balance);
         qpi.transfer(qpi.invocator(), input.amount);
-        if (u.balance < input.amount)
-        {
-            qpi.__qpiAbort(1);
-        }
-        u.balance -= input.amount;
-        state.users.set(fuOutput.index, u);
+        output.new_balance = current_balance;
     }
     _
 
     /*
-     * @brief Get User Balance
+     * @brief Burn funds from the contract.
      */
-    PUBLIC_FUNCTION(GetUser)
+    PUBLIC_PROCEDURE(Burn)
     {
-        findUserIndex_input fuInput;
-        fuInput.user_id = input.user_id;
-        findUserIndex_output fuOutput;
+    ensureWhitelisted();
 
-        CALL(findUserIndex, fuInput, fuOutput);
-        if (fuOutput.index == NULL_INDEX)
+    if (input.amount == 0) {
+        qpi.__qpiAbort(1);
+        return;
+    }
+
+    uint64 current_balance = 0;
+    if(state.Users_balances.exists(qpi.invocator()))
+    {
+        current_balance = state.Users_balances.get(qpi.invocator());
+    }
+
+    if (current_balance < input.amount)
+    {
+        qpi.__qpiAbort(3);
+        return;
+    }
+
+    current_balance -= input.amount;
+    state.Users_balances.set(qpi.invocator(), current_balance);
+    qpi.burn(input.amount);
+    output.new_balance = current_balance;
+    }
+    _
+
+    /*
+     * @brief Debit funds from a specified user's balance and add the amount to the contract balance.
+     */
+    PUBLIC_PROCEDURE(Debit)
+    {
+    
+        ensureWhitelisted();
+
+        uint64 current_balance = 0;
+        if(state.Users_balances.exists(input.user))
         {
+            current_balance = state.Users_balances.get(input.user);
+        }
+        if (current_balance < input.amount)
+        {
+            qpi.__qpiAbort(1);
+            return;
+        }
+        current_balance -= input.amount;
+        state.Users_balances.set(input.user, current_balance);
+        
+        
+        state.contract_balance += input.amount;
+        
+        output.new_user_balance = current_balance;
+        output.new_contract_balance = state.contract_balance;
+    }
+    _
+
+    /*
+     * @brief Withdraw funds from the contract to a specified address.
+     */
+    PUBLIC_PROCEDURE(WithdrawTo)
+    {
+        ensureWhitelisted();
+
+        if(state.contract_balance < input.amount)
+        {
+            qpi.__qpiAbort(3);
+            return;
+        }
+        state.contract_balance -= input.amount;
+        
+        qpi.transfer(input.to, input.amount);
+        output.new_contract_balance = state.contract_balance;
+    }
+    _
+
+    /*
+     * @brief Get the balance of the invocator.
+     */
+    PUBLIC_FUNCTION(GetBalance)
+    {
+
+        if (state.Users_balances.exists(qpi.invocator())) {
+            output.balance = state.Users_balances.get(qpi.invocator());
+        } else {
             output.balance = 0;
         }
-        else
-        {
-            User u = state.users.get(fuOutput.index);
-            output.balance = u.balance;
-        }
     }
     _
 
     /*
-     *@Brief Update Provider Details
+     * @brief Get list of whitelisted addresses.
      */
-    PUBLIC_PROCEDURE(UpdateProvider)
+    PUBLIC_FUNCTION(GetWhitelistedAddresses)
     {
-        findProviderIndex_input fpInput;
-        fpInput.provider_id = qpi.invocator();
-        findProviderIndex_output fpOutput;
-        CALL(findProviderIndex, fpInput, fpOutput);
-        if (fpOutput.index == NULL_INDEX)
-        {
+        ensureWhitelisted();
 
-            findEmptyProviderSlot_input fpInput2;
-            findEmptyProviderSlot_output fpOutput2;
-            CALL(findEmptyProviderSlot, fpInput2, fpOutput2);
-
-            Provider p;
-            p.provider_id = qpi.invocator();
-            p.burn_rate = input.burn_rate;
-            p.price_input = input.price_input;
-            p.price_output = input.price_output;
-            p.reputation = input.reputation;
-            state.providers.set(fpOutput2.index, p);
-
-            // check if the provider is already a user if not add it to the users array
-            findUserIndex_input fuInput;
-            fuInput.user_id = qpi.invocator();
-            findUserIndex_output fuOutput;
-
-            CALL(findUserIndex, fuInput, fuOutput);
-            if (fuOutput.index == NULL_INDEX)
-            {
-                findEmptyUserSlot_input fsInput2;
-                findEmptyUserSlot_output fsOutput2;
-                CALL(findEmptyUserSlot, fsInput2, fsOutput2);
-                User u;
-                u.user_id = qpi.invocator();
-                u.balance = 0;
-                state.users.set(fsOutput2.index, u);
-            }          
-        }
-        else
-        {
-            findProviderIndex_input fpInput;
-            fpInput.provider_id = qpi.invocator();
-            findProviderIndex_output fpOutput;
-            CALL(findProviderIndex, fpInput, fpOutput);
-            Provider p = state.providers.get(fpOutput.index);
-            p.burn_rate = input.burn_rate;
-            p.price_input = input.price_input;
-            p.price_output = input.price_output;
-            state.providers.set(fpOutput.index, p);
-        }
+        output.addresses = state.whitelist.keys();
+        output.count = output.addresses.size();
     }
     _
 
-
-    /*
-     * @brief Get Provider Details
-     */
-    PUBLIC_FUNCTION(GetProvider)
+    PUBLIC_FUNCTION(GetContractBalance)
     {
-        findProviderIndex_input fpInput;
-        fpInput.provider_id = input.provider_id;
-        findProviderIndex_output fpOutput;
-        CALL(findProviderIndex, fpInput, fpOutput);
-        if (fpOutput.index == NULL_INDEX)
-        {
-            output.burn_rate = 0;
-            output.price_input = 0;
-            output.price_output = 0;
-            output.reputation = 0;
-        }
-        else
-        {
-            Provider p = state.providers.get(fpOutput.index);
-            output.burn_rate = p.burn_rate;
-            output.price_input = p.price_input;
-            output.price_output = p.price_output;
-            output.reputation = p.reputation;
-        }
+        ensureWhitelisted();
+        output.balance = state.contract_balance;
     }
     _
 
-    /*
-     * @brief Process Request : This the main function that process the request from the users
-     * handle the token transfer and burn
-     */
-    PUBLIC_PROCEDURE(ProcessRequest)
+    REGISTER_USER_FUNCTIONS_AND_PROCEDURES()
     {
-        findProviderIndex_input fpInput;
-        fpInput.provider_id = input.provider_id;
-        findProviderIndex_output fpOutput;
-        CALL(findProviderIndex, fpInput, fpOutput);
-        if (fpOutput.index == NULL_INDEX)
-        {
-            output.remaining_balance = 0;
-            return;
-        }
-        Provider p = state.providers.get(fpOutput.index);
+        // procedures
+        REGISTER_USER_PROCEDURE(Initialize, 1);
+        REGISTER_USER_PROCEDURE(AddToWhitelist, 2);
+        REGISTER_USER_PROCEDURE(RemoveFromWhitelist, 3);
+        REGISTER_USER_PROCEDURE(Deposit, 4);
+        REGISTER_USER_PROCEDURE(Withdraw, 5);
+        REGISTER_USER_PROCEDURE(Burn, 6);
+        REGISTER_USER_PROCEDURE(Debit, 7);
+        REGISTER_USER_PROCEDURE(WithdrawTo, 8);
 
-        findUserIndex_input fuInput;
-        fuInput.user_id = input.user_id;
-        findUserIndex_output fuOutput;
-        CALL(findUserIndex, fuInput, fuOutput);
-        if (fuOutput.index == NULL_INDEX)
-        {
-            output.remaining_balance = 0;
-            return;
-        }
-        User u = state.users.get(fuOutput.index);
-
-        uint64 cost = (input.token_output * p.price_input) + (input.token_input * p.price_output);
-        uint64 burn_amount = (cost * p.burn_rate) / 10000;
-
-        if (u.balance < cost)
-        {
-            // TODO: return error
-            return;
-        }
-        else
-        {
-            u.balance -= cost;
-            state.users.set(fuOutput.index, u);
-
-            findUserIndex_input fuInput;
-            fuInput.user_id = p.provider_id;
-            findUserIndex_output fuOutput;
-            CALL(findUserIndex, fuInput, fuOutput);
-
-            User u_provider = state.users.get(fuOutput.index);
-            u_provider.balance = cost - burn_amount + u_provider.balance;
-            state.providers.set(fpOutput.index, p);
-        }
-        qpi.burn(burn_amount);
-    }
-    _
-
-    REGISTER_USER_FUNCTIONS_AND_PROCEDURES
-
-    REGISTER_USER_PROCEDURE(Topup, 1);
-    REGISTER_USER_PROCEDURE(Withdraw, 2);
-    REGISTER_USER_FUNCTION(GetUser, 1);
-    REGISTER_USER_PROCEDURE(UpdateProvider, 3);
-    REGISTER_USER_FUNCTION(GetProvider, 2);
-    REGISTER_USER_PROCEDURE(ProcessRequest, 4);
-    _
-
-    INITIALIZE
-
-    {
-        // Initialize the users and providers arrays : Set all the values to 0
-        for (uint64 i = 0; i < state.users.capacity(); ++i)
-        {
-            User empty;
-            empty.user_id = NULL_ID;
-            empty.balance = 0;
-            state.users.set(i, empty);
-        }
-
-        // Initialize the providers array : Set all the values to 0
-        for (uint64 i = 0; i < state.providers.capacity(); ++i)
-        {
-            Provider empty;
-            empty.provider_id = NULL_ID;
-            empty.burn_rate = 0;
-            empty.price_input = 0;
-            empty.price_output = 0;
-            empty.reputation = 0;
-            state.providers.set(i, empty);
-        }
+        // functions
+        REGISTER_USER_FUNCTION(GetBalance, 1);
+        REGISTER_USER_FUNCTION(GetWhitelistedAddresses, 2);
+        REGISTER_USER_FUNCTION(GetContractBalance, 3);
+    
     }
     _
 };
