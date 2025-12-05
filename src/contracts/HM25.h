@@ -114,6 +114,31 @@ public:
         bit is_whitelisted;
     };
 
+    struct Burn_locals
+    {
+        bit isAdmin;
+    };
+
+    struct Debit_locals
+    {
+        bit isAdmin;
+    };
+
+    struct WithdrawTo_locals
+    {
+        bit isAdmin;
+    };
+
+    struct GetWhitelistedCount_locals
+    {
+        bit isAdmin;
+    };
+
+    struct GetContractBalance_locals
+    {
+        bit isAdmin;
+    };
+
 private:
     id _owner;
     bit _initialized;
@@ -122,25 +147,6 @@ private:
     HashMap<id, uint64, HM25_MAX_USERS> _userBalances;
     HashMap<id, bit, HM25_MAX_WHITELIST> _whitelist;
     uint64 _whitelistCount;
-
-    PRIVATE_FUNCTION_WITH_LOCALS(isWhitelisted)
-        bit result;
-    _
-        locals.result = false;
-        if (state._whitelist.get(qpi.invocator(), locals.result))
-        {
-            output.result = locals.result;
-        }
-        else
-        {
-            output.result = false;
-        }
-    _
-
-    struct isWhitelisted_output
-    {
-        bit result;
-    };
 
 public:
     PUBLIC_PROCEDURE(Initialize)
@@ -217,8 +223,6 @@ public:
     _
 
     PUBLIC_PROCEDURE_WITH_LOCALS(Burn)
-        bit isAdmin;
-    _
         if (input.amount == 0)
         {
             return;
@@ -246,8 +250,6 @@ public:
     _
 
     PUBLIC_PROCEDURE_WITH_LOCALS(Debit)
-        bit isAdmin;
-    _
         if (input.amount == 0)
         {
             return;
@@ -277,8 +279,6 @@ public:
     _
 
     PUBLIC_PROCEDURE_WITH_LOCALS(WithdrawTo)
-        bit isAdmin;
-    _
         if (input.amount == 0)
         {
             return;
@@ -308,8 +308,6 @@ public:
     _
 
     PUBLIC_FUNCTION_WITH_LOCALS(GetWhitelistedCount)
-        bit isAdmin;
-    _
         locals.isAdmin = false;
         state._whitelist.get(qpi.invocator(), locals.isAdmin);
         if (!locals.isAdmin)
@@ -321,8 +319,6 @@ public:
     _
 
     PUBLIC_FUNCTION_WITH_LOCALS(GetContractBalance)
-        bit isAdmin;
-    _
         locals.isAdmin = false;
         state._whitelist.get(qpi.invocator(), locals.isAdmin);
         if (!locals.isAdmin)
