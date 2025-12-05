@@ -195,8 +195,13 @@ public:
      */
     PUBLIC_PROCEDURE(Deposit)
     {
+        if (input.amount == 0) {
+            qpi.__qpiAbort(1);
+            return;
+        }
+        
         uint64 current_balance = 0;
-        if(state.balances.exists(qpi.invocator()))
+        if(state.Users_balances.exists(qpi.invocator()))
         {
             current_balance = state.Users_balances.get(qpi.invocator());
         }
@@ -234,22 +239,29 @@ public:
      */
     PUBLIC_PROCEDURE(Burn)
     {
-        ensureWhitelisted();
+    ensureWhitelisted();
 
-        uint64 current_balance = 0;
-        if(state.contract_balance.exists())
-        {
-            current_balance = state.contract_balance;
-        }
-        
-        if (current_balance < input.amount)
-        {
-            qpi.__qpiAbort(1);
-            return;
-        }
-        current_balance -= input.amount;
-        qpi.burn(input.amount);
-        output.new_balance = current_balance;
+    if (input.amount == 0) {
+        qpi.__qpiAbort(1);
+        return;
+    }
+
+    uint64 current_balance = 0;
+    if(state.Users_balances.exists(qpi.invocator()))
+    {
+        current_balance = state.Users_balances.get(qpi.invocator());
+    }
+
+    if (current_balance < input.amount)
+    {
+        qpi.__qpiAbort(3);
+        return;
+    }
+
+    current_balance -= input.amount;
+    state.Users_balances.set(qpi.invocator(), current_balance);
+    qpi.burn(input.amount);
+    output.new_balance = current_balance;
     }
     _
 
