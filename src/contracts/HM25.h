@@ -19,15 +19,6 @@ public:
         uint64 new_balance;
     };
 
-    struct Withdraw_input
-    {
-        uint64 amount;
-    };
-    struct Withdraw_output
-    {
-        uint64 new_balance;
-    };
-
     struct Burn_input
     {
         uint64 amount;
@@ -201,27 +192,6 @@ public:
         output.new_balance = currentBalance;
     _
 
-    PUBLIC_PROCEDURE(Withdraw)
-        if (input.amount == 0)
-        {
-            return;
-        }
-        
-        uint64 currentBalance = 0;
-        state._userBalances.get(qpi.invocator(), currentBalance);
-        
-        if (currentBalance < input.amount)
-        {
-            return;
-        }
-        
-        currentBalance = currentBalance - input.amount;
-        state._userBalances.set(qpi.invocator(), currentBalance);
-        state._contractBalance = state._contractBalance - input.amount;
-        qpi.transfer(qpi.invocator(), input.amount);
-        output.new_balance = currentBalance;
-    _
-
     PUBLIC_PROCEDURE_WITH_LOCALS(Burn)
         if (input.amount == 0)
         {
@@ -272,7 +242,6 @@ public:
         
         currentBalance = currentBalance - input.amount;
         state._userBalances.set(input.user, currentBalance);
-        state._contractBalance = state._contractBalance + input.amount;
         
         output.new_user_balance = currentBalance;
         output.new_contract_balance = state._contractBalance;
@@ -340,10 +309,9 @@ public:
         REGISTER_USER_PROCEDURE(AddToWhitelist, 2);
         REGISTER_USER_PROCEDURE(RemoveFromWhitelist, 3);
         REGISTER_USER_PROCEDURE(Deposit, 4);
-        REGISTER_USER_PROCEDURE(Withdraw, 5);
-        REGISTER_USER_PROCEDURE(Burn, 6);
-        REGISTER_USER_PROCEDURE(Debit, 7);
-        REGISTER_USER_PROCEDURE(WithdrawTo, 8);
+        REGISTER_USER_PROCEDURE(Burn, 5);
+        REGISTER_USER_PROCEDURE(Debit, 6);
+        REGISTER_USER_PROCEDURE(WithdrawTo, 7);
 
         REGISTER_USER_FUNCTION(GetBalance, 1);
         REGISTER_USER_FUNCTION(GetWhitelistedCount, 2);
